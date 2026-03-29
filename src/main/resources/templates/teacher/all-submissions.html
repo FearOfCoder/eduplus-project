@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Quản lý bài nộp', ~{::content})}">
+<body>
+    <div th:fragment="content">
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1"><i class="fas fa-clipboard-list"></i> Quản lý bài nộp</h1>
+            <p class="text-muted mb-0">Tổng quan tất cả bài nộp từ các khóa học của bạn</p>
+        </div>
+    </div>
+
+    <!-- Thống kê -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Tổng số bài tập</h6>
+                            <h3 class="mb-0" th:text="${totalAssignments}">0</h3>
+                        </div>
+                        <div class="text-primary" style="font-size: 2.5rem;">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Tổng số bài nộp</h6>
+                            <h3 class="mb-0" th:text="${totalSubmissions}">0</h3>
+                        </div>
+                        <div class="text-info" style="font-size: 2.5rem;">
+                            <i class="fas fa-file-upload"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Chưa chấm</h6>
+                            <h3 class="mb-0 text-warning" th:text="${ungradedSubmissions}">0</h3>
+                        </div>
+                        <div class="text-warning" style="font-size: 2.5rem;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar: Bộ lọc & Sắp xếp (hiện khi có dữ liệu từ server, kể cả danh sách rỗng sau lọc) -->
+    <div th:if="${assignmentInfoList != null}" class="card shadow-sm border-0 mb-3">
+        <div class="card-body py-3">
+            <form id="filterForm" method="get" action="/teacher/all-submissions" class="row g-3 align-items-center flex-wrap">
+                <input type="hidden" name="filter" id="inputFilter" th:value="${filter != null ? filter : 'all'}">
+                <input type="hidden" name="sort" id="inputSort" th:value="${sort != null ? sort : 'newest'}">
+                <div class="col-auto">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="ungradedOnly"
+                               th:checked="${filter == 'ungraded_only'}">
+                        <label class="form-check-label" for="ungradedOnly">⚠️ Chỉ hiện bài chưa chấm</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label mb-0">Sắp xếp:</label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select form-select-sm" id="sortSelect" style="width: auto;">
+                        <option value="newest" th:selected="${sort == 'newest'}">Mới nhất</option>
+                        <option value="most_ungraded" th:selected="${sort == 'most_ungraded'}">Nhiều bài chưa chấm nhất</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Áp dụng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh sách bài tập -->
+    <div th:if="${assignmentInfoList == null || assignmentInfoList.isEmpty()}" class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Bạn chưa có bài tập nào hoặc chưa có bài nộp.
+        <span th:if="${filter == 'ungraded_only'}">Thử bỏ chọn "Chỉ hiện bài chưa chấm".</span>
+    </div>
+
+    <div th:if="${assignmentInfoList != null && !assignmentInfoList.isEmpty()}">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <strong><i class="fas fa-list"></i> Danh sách bài tập có bài nộp</strong>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered mb-0 align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 200px;">Khóa học</th>
+                            <th>Tiêu đề bài tập</th>
+                            <th style="width: 120px;">Hạn nộp</th>
+                            <th style="width: 100px;" class="text-center">Tổng bài nộp</th>
+                            <th style="width: 100px;" class="text-center">Chưa chấm</th>
+                            <th style="width: 150px;" class="text-center">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="info : ${assignmentInfoList}">
+                            <td>
+                                <strong th:text="${info.assignment.course.title}">Tên khóa học</strong>
+                            </td>
+                            <td>
+                                <strong th:text="${info.assignment.title}">Tiêu đề bài tập</strong>
+                            </td>
+                            <td>
+                                <small th:text="${info.assignment.dueDate != null ? #temporals.format(info.assignment.dueDate, 'dd/MM/yyyy HH:mm') : 'Không giới hạn'}">
+                                    01/01/2026 12:00
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info" th:text="${info.submissionCount}">0</span>
+                            </td>
+                            <td class="text-center">
+                                <span th:if="${info.ungradedCount > 0}"
+                                      class="badge bg-warning"
+                                      th:text="${info.ungradedCount}">0</span>
+                                <span th:if="${info.ungradedCount == 0}"
+                                      class="badge bg-success">0</span>
+                            </td>
+                            <td class="text-center">
+                                <a th:href="@{|/teacher/assignments/${info.assignment.id}/submissions|}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> Xem & Chấm
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    (function() {
+        var form = document.getElementById('filterForm');
+        var inputFilter = document.getElementById('inputFilter');
+        var inputSort = document.getElementById('inputSort');
+        var ungradedOnly = document.getElementById('ungradedOnly');
+        var sortSelect = document.getElementById('sortSelect');
+        if (form && ungradedOnly) {
+            ungradedOnly.addEventListener('change', function() {
+                inputFilter.value = this.checked ? 'ungraded_only' : 'all';
+            });
+        }
+        if (sortSelect && inputSort) {
+            sortSelect.addEventListener('change', function() {
+                inputSort.value = this.value;
+            });
+        }
+    })();
+</script>
+    </div>
+</body>
+</html>

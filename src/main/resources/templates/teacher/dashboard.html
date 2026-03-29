@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Doanh thu - Giảng viên', ~{::content})}">
+<body>
+    <div th:fragment="content" class="teacher-revenue-dashboard">
+        <style>
+            /* Tắt hiệu ứng nổi/lift cho card và bảng trên trang Doanh thu */
+            .teacher-revenue-dashboard .card:hover { transform: none !important; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075) !important; }
+            .teacher-revenue-dashboard .table tbody tr:hover { transform: none !important; }
+        </style>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+        <div th:if="${currentUser != null and currentUser.status != null and currentUser.status.name() == 'PENDING'}" class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-hourglass-half me-2"></i>
+            <strong>Tài khoản của bạn đang chờ Admin xét duyệt hồ sơ chuyên môn. Bạn chưa thể tạo khóa học lúc này.</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+        <h1 class="h4 fw-bold mb-4">Thống kê Doanh thu</h1>
+
+        <!-- Top Cards - Modern Stat Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card stat-card-edup h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap icon-primary">
+                            <i class="fas fa-wallet fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">Tổng thực nhận</div>
+                            <div class="stat-value" th:text="|${#numbers.formatDecimal(totalNetRevenue != null ? totalNetRevenue : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card stat-card-edup h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap icon-teal">
+                            <i class="fas fa-users fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">Tổng học viên</div>
+                            <div class="stat-value" th:text="${totalStudents != null ? totalStudents : 0}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card stat-card-edup h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap icon-amber">
+                            <i class="fas fa-book-open fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">Tổng khóa học</div>
+                            <div class="stat-value" th:text="${courseNames != null ? #lists.size(courseNames) : 0}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts: 2 columns -->
+        <div class="row mb-4">
+            <div class="col-md-8 mb-3">
+                <div class="card bg-white border-0 rounded-4 shadow-sm h-100">
+                    <div class="card-header bg-white border-0"><h6 class="mb-0 fw-bold">Doanh thu thực nhận theo khóa học</h6></div>
+                    <div class="card-body">
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-white border-0 rounded-4 shadow-sm h-100">
+                    <div class="card-header bg-white border-0"><h6 class="mb-0 fw-bold">Tỷ lệ học viên</h6></div>
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="studentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảng chi tiết -->
+        <div class="card table-card-edup border-0">
+            <div class="card-header py-3 border-0" style="background: #F8FAFC;">
+                <h2 class="h5 mb-0 fw-bold"><i class="fas fa-list me-2"></i>Chi tiết doanh thu theo khóa học</h2>
+                <h3 class="h6 mb-0 text-muted">(<i>phí nền tảng có thể thay đổi theo giai đoạn</i>)</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="revenueTable" class="table table-hover align-middle w-100 mb-0">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Tên khóa học</th>
+                                <th>Số lượng đăng ký</th>
+                                <th>Doanh thu khách trả</th>
+                                <th>Phí nền tảng</th>
+                                <th>Tiền thực nhận</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item, stat : ${revenueList}" class="align-middle">
+                                <td th:text="${stat.count}">1</td>
+                                <td th:text="${item.courseName}">Tên khóa</td>
+                                <td class="text-end" th:text="${item.studentCount}">0</td>
+                                <td class="text-end" th:attr="data-order=${item.grossTotal != null ? item.grossTotal : 0}" th:text="|${#numbers.formatDecimal(item.grossTotal != null ? item.grossTotal : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</td>
+                                <td class="text-end text-danger" th:attr="data-order=${item.platformFee != null ? item.platformFee : 0}" th:text="|${#numbers.formatDecimal(item.platformFee != null ? item.platformFee : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</td>
+                                <td class="text-end fw-bold text-primary" th:attr="data-order=${item.netTotal != null ? item.netTotal : 0}" th:text="|${#numbers.formatDecimal(item.netTotal != null ? item.netTotal : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${revenueList != null and #lists.isEmpty(revenueList)}" class="p-4 text-muted text-center">Chưa có dữ liệu doanh thu.</div>
+            </div>
+        </div>
+
+        <!-- DataTables: jQuery + DataTables JS (trước Chart.js) -->
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script>
+        $.fn.dataTable.ext.order['dom-data-order'] = function (settings, col) {
+            return this.api().column(col, { order: 'index' }).nodes().map(function (td) {
+                var v = $(td).attr('data-order');
+                return v === undefined || v === '' ? 0 : parseFloat(v);
+            });
+        };
+        $(document).ready(function() {
+            if ($('#revenueTable').length > 0) {
+                $('#revenueTable').DataTable({
+                    "language": {
+                        "search": "Tìm kiếm:",
+                        "lengthMenu": "Hiển thị _MENU_ khóa học",
+                        "info": "Đang hiển thị từ _START_ đến _END_ của _TOTAL_ khóa học",
+                        "infoEmpty": "Không có dữ liệu",
+                        "zeroRecords": "Không tìm thấy kết quả nào",
+                        "paginate": {
+                            "first": "Đầu",
+                            "last": "Cuối",
+                            "next": "Tiếp",
+                            "previous": "Trước"
+                        }
+                    },
+                    "order": [ [ 5, "desc" ] ],
+                    "columnDefs": [ { "targets": [ 3, 4, 5 ], "orderDataType": "dom-data-order" } ]
+                });
+            }
+        });
+        </script>
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            /*<![CDATA[*/
+            var labels = /*[[${courseNames}]]*/ [];
+            var revenueData = /*[[${netAmounts}]]*/ [];
+            var studentData = /*[[${studentCounts}]]*/ [];
+            /*]]>*/
+
+            if (!labels || labels.length === 0) return;
+
+            var ctxRev = document.getElementById('revenueChart');
+            var vibrantPalette = ['#4F46E5', '#14B8A6', '#F59E0B', '#F43F5E', '#0EA5E9'];
+            if (ctxRev) {
+                new Chart(ctxRev, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Doanh thu (VNĐ)',
+                            data: revenueData,
+                            backgroundColor: '#4F46E5',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: { grid: { color: 'rgba(0,0,0,0.05)' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            var ctxStu = document.getElementById('studentChart');
+            if (ctxStu) {
+                new Chart(ctxStu, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: studentData,
+                            backgroundColor: vibrantPalette,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        });
+        </script>
+    </div>
+</body>
+</html>

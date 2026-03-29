@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Quản lý Người dùng', ~{::content})}">
+<body>
+    <div th:fragment="content">
+        <style>
+            .table-admin-users tbody tr:hover {
+                background-color: rgba(0, 0, 0, 0.04) !important;
+                transform: none !important;
+            }
+            .table-admin-users button[data-bs-toggle="modal"] {
+                pointer-events: auto !important;
+                cursor: pointer !important;
+                position: relative;
+                z-index: 10;
+            }
+        </style>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h4 fw-bold mb-0">Quản lý Người dùng</h1>
+        </div>
+
+        <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${message}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card table-card-edup mb-4" id="pendingTeachers">
+            <div class="card-header py-3 border-0" style="background: #F8FAFC;">
+                <h2 class="h5 mb-0 fw-bold"><i class="fas fa-user-clock me-2"></i>Hồ sơ Giảng viên chờ duyệt</h2>
+            </div>
+            <div class="card-body p-0">
+                <div th:if="${#lists.isEmpty(pendingTeachers)}" class="p-4 text-muted text-center">Không có hồ sơ chờ duyệt.</div>
+                <div th:if="${!#lists.isEmpty(pendingTeachers)}" class="table-responsive">
+                    <table class="table modern-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Người dùng</th>
+                                <th>Hồ sơ</th>
+                                <th style="width: 120px;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="t : ${pendingTeachers}">
+                                <td>
+                                    <div class="info-cell">
+                                        <img th:src="${t.avatar != null and !t.avatar.isEmpty() ? t.avatar : #strings.concat('https://ui-avatars.com/api/?background=random&color=fff&name=', t.fullName != null ? t.fullName : 'User')}" class="avatar-img" alt="Avatar" th:data-name="${t.fullName}" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?background=random&color=fff&name=' + encodeURIComponent(this.getAttribute('data-name') || 'User');">
+                                        <div class="info-details">
+                                            <h6>
+                                                <button type="button" class="btn btn-link text-decoration-none fw-bold p-0 text-primary text-start border-0"
+                                                        data-bs-toggle="modal" data-bs-target="#teacherDetailModal"
+                                                        th:data-fullname="${t.fullName}" th:data-email="${t.email}"
+                                                        th:data-phone="${t.phoneNumber}"
+                                                        th:data-university="${t.university != null ? t.university : 'Chưa cập nhật'}"
+                                                        th:data-experience="${t.experience != null ? t.experience : 'Chưa cập nhật'}"
+                                                        th:data-portfolio="${t.portfolioUrl != null ? t.portfolioUrl : ''}"
+                                                        th:data-bio="${t.bio != null ? t.bio : ''}">
+                                                    <span th:text="${t.fullName}">Tên</span>
+                                                </button>
+                                            </h6>
+                                            <span th:text="${t.email}">email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a th:href="${t.portfolioUrl != null and !t.portfolioUrl.isEmpty() ? t.portfolioUrl : '#'}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill position-relative" style="z-index: 10;"><i class="fas fa-link"></i></a>
+                                </td>
+                                <td>
+                                    <form th:action="@{/admin/teacher/approve/{id}(id=${t.id})}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
+                                    </form>
+                                    <form th:action="@{/admin/teacher/reject/{id}(id=${t.id})}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Từ chối?');"><i class="fas fa-times"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}">Thành công</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${errorMsg}">Lỗi</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div class="filter-toolbar bg-white p-3 rounded-4 shadow-sm mb-4 d-flex flex-wrap gap-3 align-items-center justify-content-between border-0">
+            <div class="search-box position-relative flex-grow-1" style="max-width: 400px;">
+                <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted" style="left: 15px;"></i>
+                <input type="text" id="customSearch" class="form-control rounded-pill ps-5 bg-light border-0" placeholder="Tìm kiếm tên, email...">
+            </div>
+            <div class="d-flex gap-2">
+                <select id="roleFilter" class="form-select rounded-pill bg-light border-0 text-muted fw-bold" style="min-width: 140px;">
+                    <option value="">Tất cả Vai trò</option>
+                    <option value="TEACHER">Giảng viên</option>
+                    <option value="STUDENT">Học viên</option>
+                </select>
+                <select id="statusFilter" class="form-select rounded-pill bg-light border-0 text-muted fw-bold" style="min-width: 160px;">
+                    <option value="">Tất cả Trạng thái</option>
+                    <option value="PENDING">Chờ duyệt</option>
+                    <option value="ACTIVE">Đang hoạt động</option>
+                    <option value="BANNED">Bị cấm</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card table-card-edup">
+            <div class="card-header py-3 border-0" style="background: #F8FAFC;">
+                <h2 class="h5 mb-0 fw-bold"><i class="fas fa-users me-2"></i>Danh sách người dùng</h2>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="usersTable" class="table modern-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Người dùng</th>
+                                <th class="col-role">Role</th>
+                                <th class="col-status">Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="u : ${users}">
+                                <td>
+                                    <div class="info-cell">
+                                        <img th:src="${u.avatar != null and !u.avatar.isEmpty() ? u.avatar : #strings.concat('https://ui-avatars.com/api/?background=random&color=fff&name=', u.fullName != null ? u.fullName : 'User')}" class="avatar-img" alt="Avatar" th:data-name="${u.fullName}" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?background=random&color=fff&name=' + encodeURIComponent(this.getAttribute('data-name') || 'User');">
+                                        <div class="info-details">
+                                            <h6 th:text="${u.fullName}">Tên người dùng</h6>
+                                            <span th:text="${u.email}">email@example.com</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="col-role" th:data-search="${u.role != null ? u.role.name() : ''}">
+                                    <span class="badge rounded-pill bg-secondary" th:text="${u.role != null ? u.role.name() : '—'}">ROLE</span>
+                                </td>
+                                <td class="col-status" th:data-search="${u.status != null ? u.status.name() : ''}">
+                                    <span th:if="${u.status != null and u.status.name() == 'ACTIVE'}" class="badge rounded-pill bg-success">Active</span>
+                                    <span th:if="${u.status != null and u.status.name() == 'PENDING'}" class="badge rounded-pill bg-warning text-dark">Chờ duyệt</span>
+                                    <span th:if="${u.status != null and u.status.name() == 'REJECTED'}" class="badge rounded-pill bg-danger">Từ chối</span>
+                                    <span th:if="${u.status != null and u.status.name() == 'BANNED'}" class="badge rounded-pill bg-dark">Bị cấm</span>
+                                    <span th:if="${u.status == null or (u.status != null and u.status.name() != 'ACTIVE' and u.status.name() != 'PENDING' and u.status.name() != 'REJECTED' and u.status.name() != 'BANNED')}" class="badge rounded-pill bg-secondary">—</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-info text-white rounded-pill position-relative" style="z-index: 10;"
+                                                title="Xem chi tiết"
+                                                data-bs-toggle="modal" data-bs-target="#userDetailModal"
+                                                th:data-name="${u.fullName}"
+                                                th:data-email="${u.email}"
+                                                th:data-phone="${u.phoneNumber != null ? u.phoneNumber : 'Chưa cập nhật'}"
+                                                th:data-role="${u.role != null ? u.role.name() : '—'}"
+                                                th:data-status="${u.status != null ? u.status.name() : '—'}"
+                                                th:data-avatar="${u.avatar != null and !u.avatar.isEmpty() ? u.avatar : #strings.concat('https://ui-avatars.com/api/?background=random&color=fff&name=', u.fullName != null ? u.fullName : 'User')}"
+                                                th:data-address="${u.address != null ? u.address : 'Chưa cập nhật'}"
+                                                th:data-occupation="${u.occupation != null ? u.occupation : 'Chưa cập nhật'}"
+                                                th:data-university="${u.university != null ? u.university : 'Chưa cập nhật'}"
+                                                th:data-experience="${u.experience != null ? u.experience : 'Chưa có thông tin'}"
+                                                th:data-bio="${u.bio != null ? u.bio : 'Không có tiểu sử.'}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <form th:action="@{/admin/users/toggle-ban/{id}(id=${u.id})}" method="post" class="m-0 position-relative" style="z-index: 10;">
+                                            <button type="submit" class="btn btn-sm rounded-pill" th:classappend="${u.status != null and u.status.name() == 'BANNED' ? 'btn-success' : 'btn-warning text-dark'}" th:title="${u.status != null and u.status.name() == 'BANNED' ? 'Mở khóa' : 'Cấm tài khoản'}" onclick="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái tài khoản này?');">
+                                                <i class="fas" th:classappend="${u.status != null and u.status.name() == 'BANNED' ? 'fa-unlock' : 'fa-lock'}"></i>
+                                            </button>
+                                        </form>
+                                        <form th:action="@{/admin/users/delete/{id}(id=${u.id})}" method="post" class="m-0 position-relative d-inline-block" style="z-index: 10;" onsubmit="return confirm('CẢNH BÁO: Xóa tài khoản này? Dữ liệu không thể phục hồi!');">
+                                            <button type="submit" class="btn btn-sm btn-danger rounded-pill" title="Xóa tài khoản">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="teacherDetailModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title"><i class="fas fa-user-tie me-2"></i>Thông tin giảng viên</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Họ tên</label>
+                                <p class="fw-bold" id="modalFullName">--</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Email</label>
+                                <p id="modalEmail">--</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">SĐT</label>
+                                <p id="modalPhone">--</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Trường học</label>
+                                <p id="modalUniversity">--</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Kinh nghiệm</label>
+                                <p id="modalExperience">--</p>
+                            </div>
+                            <div class="col-12">
+                                <label class="text-muted small">Bio</label>
+                                <p class="bg-light p-2 rounded" id="modalBio">--</p>
+                            </div>
+                            <div class="col-12">
+                                <a id="modalPortfolioLink" href="#" target="_blank" class="btn btn-primary btn-sm d-none">Xem hồ sơ gốc</a>
+                                <span id="modalPortfolioNone" class="text-muted d-none">Không có hồ sơ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script>
+            $(document).ready(function() {
+                var table = $('#usersTable').DataTable({
+                    "dom": "lrtip",
+                    "language": { "emptyTable": "Không có dữ liệu" }
+                });
+                var roleFilterVal = '', statusFilterVal = '';
+                $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                    if (settings.nTable.id !== 'usersTable') return true;
+                    var row = table.row(dataIndex).node();
+                    if (roleFilterVal && $(row).find('td.col-role').attr('data-search') !== roleFilterVal) return false;
+                    if (statusFilterVal && $(row).find('td.col-status').attr('data-search') !== statusFilterVal) return false;
+                    return true;
+                });
+                $('#customSearch').on('keyup', function() { table.search(this.value).draw(); });
+                $('#statusFilter').on('change', function() {
+                    statusFilterVal = $(this).val();
+                    table.draw();
+                });
+                if ($('#roleFilter').length > 0) {
+                    $('#roleFilter').on('change', function() {
+                        roleFilterVal = $(this).val();
+                        table.draw();
+                    });
+                }
+            });
+        </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var modalEl = document.getElementById('teacherDetailModal');
+                modalEl.addEventListener('show.bs.modal', function(event) {
+                    var button = event.relatedTarget;
+                    
+                    // Helper function an toan
+                    var get = function(name) {
+                        return button.getAttribute('data-' + name) || 'Chưa cập nhật';
+                    };
+
+                    document.getElementById('modalFullName').textContent = get('fullname');
+                    document.getElementById('modalEmail').textContent = get('email');
+                    document.getElementById('modalPhone').textContent = get('phone');
+                    document.getElementById('modalUniversity').textContent = get('university');
+                    document.getElementById('modalExperience').textContent = get('experience');
+                    document.getElementById('modalBio').textContent = get('bio');
+
+                    // Xu ly link
+                    var portfolio = button.getAttribute('data-portfolio');
+                    var linkBtn = document.getElementById('modalPortfolioLink');
+                    var noneTxt = document.getElementById('modalPortfolioNone');
+
+                    if (portfolio && portfolio.length > 5) {
+                        linkBtn.href = portfolio;
+                        linkBtn.classList.remove('d-none');
+                        noneTxt.classList.add('d-none');
+                    } else {
+                        linkBtn.classList.add('d-none');
+                        noneTxt.classList.remove('d-none');
+                    }
+                });
+            });
+        </script>
+
+        <div class="modal fade" id="userDetailModal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="userDetailModalLabel">Hồ sơ chi tiết</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
+                        <div class="text-center mb-4">
+                            <img id="modalUserDetailAvatar" src="" class="rounded-circle shadow-sm mb-3" style="width: 90px; height: 90px; object-fit: cover;" alt="Avatar">
+                            <h5 id="modalUserDetailName" class="fw-bold mb-1">Tên người dùng</h5>
+                            <span id="modalUserDetailRole" class="badge rounded-pill">Vai trò</span>
+                        </div>
+                        <h6 class="fw-bold text-muted small text-uppercase mb-2">Thông tin liên hệ</h6>
+                        <div class="bg-light rounded-3 p-3 mb-4">
+                            <div class="row mb-2">
+                                <div class="col-4 text-muted small"><i class="fas fa-envelope me-2"></i>Email:</div>
+                                <div class="col-8 fw-bold small text-end text-break" id="modalUserDetailEmail">...</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4 text-muted small"><i class="fas fa-phone me-2"></i>SĐT:</div>
+                                <div class="col-8 fw-bold small text-end" id="modalUserDetailPhone">...</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-4 text-muted small"><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ:</div>
+                                <div class="col-8 fw-bold small text-end" id="modalUserDetailAddress">...</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-5 text-muted small"><i class="fas fa-info-circle me-2"></i>Trạng thái:</div>
+                                <div class="col-7 fw-bold small text-end" id="modalUserDetailStatus">...</div>
+                            </div>
+                        </div>
+                        <h6 class="fw-bold text-muted small text-uppercase mb-2">Hồ sơ công việc</h6>
+                        <div class="border rounded-3 p-3 mb-4">
+                            <div class="row mb-2">
+                                <div class="col-5 text-muted small">Nghề nghiệp:</div>
+                                <div class="col-7 fw-bold small text-end" id="modalUserDetailOccupation">...</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-5 text-muted small">Đơn vị / Trường:</div>
+                                <div class="col-7 fw-bold small text-end" id="modalUserDetailUniversity">...</div>
+                            </div>
+                            <div id="modalUserDetailExperienceRow" class="row mb-2" style="display: none;">
+                                <div class="col-5 text-muted small">Kinh nghiệm:</div>
+                                <div class="col-7 fw-bold small text-end" id="modalUserDetailExperience">...</div>
+                            </div>
+                            <div class="row mt-3 pt-3 border-top">
+                                <div class="col-12 text-muted small mb-1">Tiểu sử (Bio):</div>
+                                <div class="col-12 small fst-italic text-secondary" id="modalUserDetailBio">...</div>
+                            </div>
+                        </div>
+                        <div class="row align-items-center bg-danger-subtle p-3 rounded-3 mx-0">
+                            <div class="col-6 text-danger fw-bold small"><i class="fas fa-exclamation-triangle me-1"></i> Mức độ nghi ngờ:</div>
+                            <div class="col-6 text-end">
+                                <span class="badge bg-danger rounded-pill shadow-sm">Cấp độ: <span id="modalUserDetailRisk">0</span>/5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var userDetailModal = document.getElementById('userDetailModal');
+                if (userDetailModal) {
+                    userDetailModal.addEventListener('show.bs.modal', function (event) {
+                        var button = event.relatedTarget;
+                        var data = {
+                            name: button.getAttribute('data-name') || '—',
+                            email: button.getAttribute('data-email') || '—',
+                            phone: button.getAttribute('data-phone') || 'Chưa cập nhật',
+                            role: button.getAttribute('data-role') || '—',
+                            status: button.getAttribute('data-status') || '—',
+                            avatar: button.getAttribute('data-avatar') || '/images/default-avatar.png',
+                            address: button.getAttribute('data-address') || 'Chưa cập nhật',
+                            occupation: button.getAttribute('data-occupation') || 'Chưa cập nhật',
+                            university: button.getAttribute('data-university') || 'Chưa cập nhật',
+                            experience: button.getAttribute('data-experience') || 'Chưa có thông tin',
+                            bio: button.getAttribute('data-bio') || 'Không có tiểu sử.'
+                        };
+
+                        userDetailModal.querySelector('#modalUserDetailName').textContent = data.name;
+                        userDetailModal.querySelector('#modalUserDetailEmail').textContent = data.email;
+                        userDetailModal.querySelector('#modalUserDetailPhone').textContent = data.phone;
+                        userDetailModal.querySelector('#modalUserDetailRole').textContent = data.role;
+                        userDetailModal.querySelector('#modalUserDetailStatus').textContent = data.status;
+                        userDetailModal.querySelector('#modalUserDetailAvatar').src = data.avatar;
+                        userDetailModal.querySelector('#modalUserDetailAddress').textContent = data.address;
+                        userDetailModal.querySelector('#modalUserDetailOccupation').textContent = data.occupation;
+                        userDetailModal.querySelector('#modalUserDetailUniversity').textContent = data.university;
+                        userDetailModal.querySelector('#modalUserDetailBio').textContent = data.bio;
+
+                        var expRow = userDetailModal.querySelector('#modalUserDetailExperienceRow');
+                        if (data.role === 'TEACHER') {
+                            expRow.style.display = 'flex';
+                            userDetailModal.querySelector('#modalUserDetailExperience').textContent = data.experience;
+                        } else {
+                            expRow.style.display = 'none';
+                        }
+
+                        var roleBadge = userDetailModal.querySelector('#modalUserDetailRole');
+                        roleBadge.className = 'badge rounded-pill ' + (data.role === 'TEACHER' ? 'bg-success' : (data.role === 'ADMIN' ? 'bg-danger' : 'bg-secondary'));
+
+                        var statusEl = userDetailModal.querySelector('#modalUserDetailStatus');
+                        statusEl.className = 'col-7 fw-bold small text-end ' + (data.status === 'BANNED' ? 'text-danger' : 'text-success');
+                    });
+                }
+            });
+        </script>
+
+    </div> </body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Quản lý khóa học', ~{::content})}">
+<body>
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="h4 fw-bold mb-0">Khóa học của <span th:text="${teacher.fullName}">Giảng viên</span></h1>
+            <a th:href="@{/teacher/courses/new}" class="btn btn-primary btn-sm">+ Tạo khóa học mới</a>
+        </div>
+        <table class="table table-modern table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Tiêu đề</th>
+                    <th>Giá</th>
+                    <th>Trạng thái</th>
+                    <th style="width: 260px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="c : ${courses}">
+                    <td th:text="${c.id}">1</td>
+                    <td th:text="${c.title}">Tên khóa học</td>
+                    <td th:text="${#numbers.formatDecimal(c.price, 0, 'COMMA', 0, 'POINT') + ' VND'}">0 VND</td>
+                    <td><span class="badge bg-secondary" th:text="${c.status}">DRAFT</span></td>
+                    <td>
+                        <div class="d-flex gap-1 flex-wrap">
+                            <a class="btn btn-sm btn-outline-primary" th:href="@{|/teacher/courses/${c.id}/edit|}">Sửa</a>
+                            <a class="btn btn-sm btn-outline-success" th:href="@{|/teacher/courses/${c.id}/lessons|}">Bài học</a>
+                            <a class="btn btn-sm btn-outline-info" th:href="@{|/teacher/courses/${c.id}/assignments|}">Bài tập</a>
+                            <form th:action="@{|/teacher/courses/${c.id}/submit-review|}" method="post" th:if="${c.status.name() == 'DRAFT' or c.status.name() == 'REJECTED'}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-warning">Gửi duyệt</button>
+                            </form>
+                            <form th:action="@{|/teacher/courses/${c.id}/delete|}" method="post" th:if="${c.status.name() != 'PUBLISHED'}" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa khóa học này?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

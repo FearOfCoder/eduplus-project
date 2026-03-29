@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Navbar Fragment - Sticky, nền trắng, bóng đổ mờ -->
+    <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-public-edup bg-white sticky-top shadow-sm mb-0" style="z-index: 1030;">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3 d-flex align-items-center" th:href="@{/}">
+                <img th:src="${siteLogo}" alt="EduPlus Logo" style="height: 55px; width: auto; object-fit: contain;" class="me-2">
+                <span style="background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: -0.5px;">EduPlus</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto gap-1">
+                    <li class="nav-item dropdown dropdown-mega position-relative">
+                        <a class="nav-link fw-bold dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Khám phá <i class="fas fa-chevron-down ms-1" style="font-size: 0.75rem;"></i>
+                        </a>
+                        <div class="dropdown-menu mega-menu">
+                            <div class="row">
+                                <div class="col-md-6 mega-menu-col">
+                                    <h6>Danh mục hàng đầu</h6>
+                                    <a th:href="@{/courses(keyword='CNTT')}" class="mega-menu-link">CNTT &amp; Lập trình</a>
+                                    <a th:href="@{/courses(keyword='AI')}" class="mega-menu-link">Trí tuệ nhân tạo (AI)</a>
+                                    <a th:href="@{/courses(keyword='Marketing')}" class="mega-menu-link">Marketing &amp; Kinh doanh</a>
+                                    <a th:href="@{/courses(keyword='Thiết kế')}" class="mega-menu-link">Thiết kế đồ họa</a>
+                                    <a th:href="@{/courses(keyword='Ngoại ngữ')}" class="mega-menu-link">Ngoại ngữ</a>
+                                </div>
+                                <div class="col-md-6 mega-menu-col border-start">
+                                    <h6>Đang thịnh hành</h6>
+                                    <a th:href="@{/courses(keyword='Python')}" class="mega-menu-link text-brand">Python cho người mới</a>
+                                    <a th:href="@{/courses(keyword='Spring Boot')}" class="mega-menu-link text-brand">Spring Boot Masterclass</a>
+                                    <a th:href="@{/courses(keyword='Figma')}" class="mega-menu-link text-brand">Thiết kế UI/UX Figma</a>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link" th:href="@{/admin/dashboard}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link" th:href="@{/admin/courses}">Duyệt khóa học</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link" th:href="@{/admin/categories}"><i class="fas fa-folder-tree"></i> Danh mục</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link" th:href="@{/admin/settings}"><i class="fas fa-cog"></i> Cấu hình</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('TEACHER')">
+                        <a class="nav-link" th:href="@{/teacher/dashboard}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('TEACHER')">
+                        <a class="nav-link" th:href="@{/teacher/courses}">Quản lý khóa học</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('TEACHER')">
+                        <a class="nav-link" th:href="@{/teacher/all-submissions}"><i class="fas fa-clipboard-list"></i> Bài nộp</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('TEACHER')">
+                        <a class="nav-link" th:href="@{/teacher/courses/new}">Tạo khóa học</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('STUDENT')">
+                        <a class="nav-link" th:href="@{/courses}">Cửa hàng</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasRole('STUDENT')">
+                        <a class="nav-link" th:href="@{/student/my-courses}">Khóa học của tôi</a>
+                    </li>
+                </ul>
+                <div class="search-wrapper d-none d-lg-flex flex-grow-1 justify-content-center mx-lg-3">
+                    <form th:action="@{/courses}" method="get" class="search-input-wrapper w-100">
+                        <input type="text" name="keyword" class="search-input" placeholder="Bạn muốn học gì hôm nay?" autocomplete="off">
+                        <button type="submit" class="search-btn flex-shrink-0" aria-label="Tìm kiếm"><i class="fas fa-search"></i></button>
+                    </form>
+                    <div class="search-dropdown">
+                        <h6 class="fw-bold mb-3" style="font-size: 0.9rem;">Đang hot trên EduPlus</h6>
+                        <div class="d-flex flex-wrap">
+                            <a th:href="@{/courses(keyword='Python')}" class="trending-tag">Python</a>
+                            <a th:href="@{/courses(keyword='Trí tuệ nhân tạo')}" class="trending-tag">Trí tuệ nhân tạo</a>
+                            <a th:href="@{/courses(keyword='Spring Boot')}" class="trending-tag">Spring Boot</a>
+                            <a th:href="@{/courses(keyword='Lập trình Web')}" class="trending-tag">Lập trình Web</a>
+                            <a th:href="@{/courses(keyword='IELTS')}" class="trending-tag">IELTS 7.0</a>
+                            <a th:href="@{/courses(keyword='Data')}" class="trending-tag">Data Analysis</a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="navbar-nav ms-auto gap-2 align-items-center">
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link btn btn-nav-outline text-decoration-none" th:href="@{/login}">Đăng nhập</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link btn btn-nav-solid text-decoration-none" th:href="@{/register}">Đăng ký</a>
+                    </li>
+                    <li class="nav-item d-flex align-items-center" th:replace="~{fragments/notifications-bell :: bell}"></li>
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center py-2" href="#" id="navbarDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <img th:if="${currentUser != null and currentUser.avatar != null and !currentUser.avatar.isEmpty()}"
+                                 th:src="${currentUser.avatar}" alt="Avatar" class="avatar-round me-2" width="36" height="36"/>
+                            <span th:unless="${currentUser != null and currentUser.avatar != null and !currentUser.avatar.isEmpty()}"
+                                  class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center me-2 avatar-round text-white" style="width:36px;height:36px;">
+                                <i class="fas fa-user small"></i>
+                            </span>
+                            <span class="d-none d-md-inline text-dark" th:text="${#authentication.principal?.fullName != null ? #authentication.principal.fullName : #authentication.name}">User</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" aria-labelledby="navbarDropdown">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" th:href="@{/profile}">
+                                    <i class="fas fa-user-circle me-2 text-muted"></i> Hồ sơ cá nhân
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" th:href="@{/profile}">
+                                    <i class="fas fa-key me-2 text-muted"></i> Đổi mật khẩu
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center" th:href="@{/help}">
+                                    <i class="fas fa-question-circle text-muted me-2"></i> Trợ giúp
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-2"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post" id="logoutForm" class="d-none"></form>
+                                <a class="dropdown-item d-flex align-items-center text-danger" href="#"
+                                   onclick="document.getElementById('logoutForm').submit(); return false;">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Navbar Dashboard: có nút Toggle Sidebar, logo theo role, chỉ Dropdown User (không menu Trang chủ/Cửa hàng) -->
+    <nav th:fragment="navbarDashboard" class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-0">
+        <div class="container-fluid">
+            <button type="button" id="sidebarToggle" class="btn btn-link text-dark me-2 py-2 d-none d-md-inline-block" aria-label="Thu gọn/mở sidebar">
+                <i class="fas fa-bars fa-lg"></i>
+            </button>
+            <a class="navbar-brand fw-bold fs-3 d-flex align-items-center text-primary" th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')">
+                <img th:src="${siteLogo}" alt="EduPlus Logo" style="height: 55px; width: auto; object-fit: contain;" class="me-2">
+                <span style="background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: -0.5px;">EduPlus</span>
+            </a>
+            <a class="navbar-brand fw-bold fs-3 d-flex align-items-center text-primary" th:href="@{/teacher/dashboard}" sec:authorize="hasRole('TEACHER')">
+                <img th:src="${siteLogo}" alt="EduPlus Logo" style="height: 55px; width: auto; object-fit: contain;" class="me-2">
+                <span style="background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: -0.5px;">EduPlus</span>
+            </a>
+            <a class="navbar-brand fw-bold fs-3 d-flex align-items-center text-primary" th:href="@{/}" sec:authorize="!hasRole('ADMIN') and !hasRole('TEACHER')">
+                <img th:src="${siteLogo}" alt="EduPlus Logo" style="height: 55px; width: auto; object-fit: contain;" class="me-2">
+                <span style="background: var(--gradient-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: -0.5px;">EduPlus</span>
+            </a>
+            <div class="collapse navbar-collapse" id="navbarNavDashboard">
+                <ul class="navbar-nav ms-auto gap-1">
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link" th:href="@{/login}">Đăng nhập</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAnonymous()">
+                        <a class="nav-link btn btn-primary btn-sm px-3 text-white" th:href="@{/register}">Đăng ký</a>
+                    </li>
+                    <li class="nav-item d-flex align-items-center" th:replace="~{fragments/notifications-bell :: bell}"></li>
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center py-2" href="#" id="navbarDropdownDashboard" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <img th:if="${currentUser != null and currentUser.avatar != null and !currentUser.avatar.isEmpty()}"
+                                 th:src="${currentUser.avatar}" alt="Avatar" class="avatar-round me-2" width="36" height="36"/>
+                            <span th:unless="${currentUser != null and currentUser.avatar != null and !currentUser.avatar.isEmpty()}"
+                                  class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center me-2 avatar-round text-white" style="width:36px;height:36px;">
+                                <i class="fas fa-user small"></i>
+                            </span>
+                            <span class="d-none d-md-inline text-dark" th:text="${#authentication.principal?.fullName != null ? #authentication.principal.fullName : #authentication.name}">User</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" aria-labelledby="navbarDropdownDashboard">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" th:href="@{/profile}">
+                                    <i class="fas fa-user-circle me-2 text-muted"></i> Hồ sơ cá nhân
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" th:href="@{/profile}">
+                                    <i class="fas fa-key me-2 text-muted"></i> Đổi mật khẩu
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center" th:href="@{/help}">
+                                    <i class="fas fa-question-circle text-muted me-2"></i> Trợ giúp
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-2"></li>
+                            <li>
+                                <form th:action="@{/logout}" method="post" id="logoutFormDashboard" class="d-none"></form>
+                                <a class="dropdown-item d-flex align-items-center text-danger" href="#"
+                                   onclick="document.getElementById('logoutFormDashboard').submit(); return false;">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</body>
+</html>

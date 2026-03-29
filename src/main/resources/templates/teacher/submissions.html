@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Bài nộp sinh viên', ~{::content})}">
+<body>
+    <div th:fragment="content">
+    <style>
+        .submission-content { max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 8px; border-radius: 6px; font-size: 0.85em; }
+        .avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .stat-card {
+            border-radius: 10px;
+            border: none;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .badge-ai { background-color: #9b59b6; color: white; }
+        .badge-waiting { background-color: #f39c12; color: white; }
+    </style>
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h5 mb-1" th:text="${assignment.title}">Tiêu đề bài tập</h1>
+            <p class="mb-0 text-muted" th:text="${assignment.course.title}">Tên khóa học</p>
+        </div>
+        <div>
+            <a th:href="@{|/teacher/courses/${assignment.course.id}/assignments|}"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Danh sách bài tập
+            </a>
+        </div>
+    </div>
+
+    <!-- Thông báo -->
+    <div th:if="${message != null}"
+         th:classappend="${messageType == 'success' ? 'alert-success' : (messageType == 'error' ? 'alert-danger' : 'alert-info')}"
+         class="alert alert-dismissible fade show" role="alert">
+        <span th:text="${message}">Thông báo</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Thống kê nhanh -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                            <i class="fas fa-file-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Tổng bài nộp</div>
+                            <div class="h4 mb-0" th:text="${totalCount != null ? totalCount : #lists.size(submissions)}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                            <i class="fas fa-check-double text-success"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Đã chấm</div>
+                            <div class="h4 mb-0" th:text="${gradedCount != null ? gradedCount : 0}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                            <i class="fas fa-chart-line text-info"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Điểm trung bình</div>
+                            <div class="h4 mb-0" th:text="${avgScore != null ? #numbers.formatDecimal(avgScore, 1, 1) : '0'}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar tìm kiếm & lọc -->
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <form method="get" th:action="@{|/teacher/assignments/${assignment.id}/submissions|}" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small mb-0">Tìm tên sinh viên</label>
+                    <input type="text" name="keyword" class="form-control form-control-sm"
+                           placeholder="Tìm tên sinh viên..."
+                           th:value="${keyword}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Trạng thái</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="" th:selected="${status == null || status == ''}">Tất cả</option>
+                        <option value="GRADED" th:selected="${status == 'GRADED'}">Đã chấm</option>
+                        <option value="UNGRADED" th:selected="${status == 'UNGRADED'}">Chưa chấm</option>
+                        <option value="AI_GRADED" th:selected="${status == 'AI_GRADED'}">Có AI gợi ý</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-0">Sắp xếp</label>
+                    <select name="sort" class="form-select form-select-sm">
+                        <option value="newest" th:selected="${sort == null || sort == 'newest'}">Mới nộp</option>
+                        <option value="oldest" th:selected="${sort == 'oldest'}">Cũ nhất</option>
+                        <option value="score_high" th:selected="${sort == 'score_high'}">Điểm cao nhất</option>
+                        <option value="score_low" th:selected="${sort == 'score_low'}">Điểm thấp nhất</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-filter"></i> Áp dụng
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(submissions)}" class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Không có bài nộp nào thỏa bộ lọc. Thử đổi từ khóa hoặc trạng thái.
+    </div>
+
+    <div th:if="${!#lists.isEmpty(submissions)}">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <strong><i class="fas fa-list"></i> Danh sách bài nộp</strong>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 200px;">Sinh viên</th>
+                                <th style="width: 130px;">Ngày nộp</th>
+                                <th>Nội dung bài làm</th>
+                                <th style="width: 95px;">Điểm AI</th>
+                                <th style="width: 115px;">Điểm chính thức</th>
+                                <th style="width: 100px;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="s : ${submissions}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img th:if="${s.student.avatar != null and !s.student.avatar.isEmpty()}"
+                                             th:src="${s.student.avatar}" alt="Avatar" class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;"/>
+                                        <span th:unless="${s.student.avatar != null and !s.student.avatar.isEmpty()}"
+                                              class="avatar-placeholder me-2" th:text="${#strings.substring(s.student.fullName, 0, 1)}">A</span>
+                                        <div>
+                                            <strong th:text="${s.student.fullName}">Tên SV</strong>
+                                            <br><small class="text-muted" th:text="${s.student.email}">email</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span th:text="${s.submittedAt != null ? #temporals.format(s.submittedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</span>
+                                </td>
+                                <td>
+                                    <div class="submission-content" th:text="${s.studentAnswer}">Nội dung...</div>
+                                </td>
+                                <td>
+                                    <span th:if="${s.aiGrade != null}">
+                                        <span th:text="${#numbers.formatDecimal(s.aiGrade, 1, 1)}">—</span> / 100
+                                        <span class="badge badge-ai ms-1">🤖 AI</span>
+                                    </span>
+                                    <span th:if="${s.aiGrade == null}" class="text-muted">—</span>
+                                </td>
+                                <td>
+                                    <span th:if="${s.grade != null}">
+                                        <strong th:text="${#numbers.formatDecimal(s.grade, 1, 1)}">—</strong> / 100
+                                    </span>
+                                    <span th:if="${s.grade == null}" class="badge badge-waiting">Chờ chấm</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{|/teacher/submissions/${s.id}|}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-pen"></i> Chấm ngay
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+</body>
+</html>

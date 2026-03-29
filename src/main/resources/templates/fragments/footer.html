@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Footer Fragment - Dark theme, 4 cột -->
+    <footer th:fragment="footer" class="footer-edup">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Về chúng tôi -->
+                <div class="col-md-6 col-lg-3">
+                    <h6><i class="fas fa-graduation-cap me-2"></i>EduPlus</h6>
+                    <p class="small mb-0">Học kỹ năng mới, mở tương lai mới. Nền tảng khóa học trực tuyến chất lượng cao.</p>
+                </div>
+                <!-- Liên kết -->
+                <div class="col-md-6 col-lg-3">
+                    <h6>Liên kết</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"><a th:href="@{/}">Trang chủ</a></li>
+                        <li class="mb-2"><a th:href="@{/courses}">Cửa hàng khóa học</a></li>
+                        <li class="mb-2"><a th:href="@{/register}">Đăng ký</a></li>
+                        <li class="mb-2"><a th:href="@{/login}">Đăng nhập</a></li>
+                    </ul>
+                </div>
+                <!-- Hỗ trợ -->
+                <div class="col-md-6 col-lg-3">
+                    <h6>Hỗ trợ</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"><a href="#">Trung tâm trợ giúp</a></li>
+                        <li class="mb-2"><a href="#">Liên hệ</a></li>
+                        <li class="mb-2"><a href="#">Điều khoản sử dụng</a></li>
+                        <li class="mb-2"><a href="#">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                <!-- Mạng xã hội -->
+                <div class="col-md-6 col-lg-3">
+                    <h6>Theo dõi chúng tôi</h6>
+                    <div class="d-flex gap-3 mt-2">
+                        <a href="#" class="text-decoration-none" style="color: #94a3b8;" aria-label="Facebook"><i class="fab fa-facebook-f fa-lg"></i></a>
+                        <a href="#" class="text-decoration-none" style="color: #94a3b8;" aria-label="YouTube"><i class="fab fa-youtube fa-lg"></i></a>
+                        <a href="#" class="text-decoration-none" style="color: #94a3b8;" aria-label="LinkedIn"><i class="fab fa-linkedin-in fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom text-center">
+                &copy; <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy')}">2026</span> EduPlus. Học kỹ năng mới, mở tương lai mới.
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

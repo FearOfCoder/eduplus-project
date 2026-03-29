@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+    <nav th:fragment="sidebar" class="dashboard-sidebar border-end py-3" style="width: 240px;">
+        <div class="px-3 mb-3">
+            <span class="text-muted small fw-semibold">GIẢNG VIÊN</span>
+        </div>
+        <ul class="nav flex-column px-2">
+            <li class="nav-item">
+                <a class="nav-link active" th:href="@{/teacher/dashboard}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/teacher/courses}"><i class="fas fa-book"></i> Khóa học</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/teacher/all-submissions}"><i class="fas fa-clipboard-list"></i> Bài nộp</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/teacher/courses/new}"><i class="fas fa-plus-circle"></i> Tạo khóa học</a>
+            </li>
+        </ul>
+    </nav>
+</body>
+</html>

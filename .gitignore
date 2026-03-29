@@ -1,0 +1,22 @@
+# Compiled class file
+*.class
+target/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Mac
+.DS_Store
+
+# Log file
+*.log
+
+# file upload
+# src/main/resources/application.properties

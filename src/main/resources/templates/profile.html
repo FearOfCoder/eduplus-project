@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{${currentUser != null and currentUser.role.name() == 'STUDENT' ? 'layout/layout' : 'layout/dashboard-layout'} :: layout('Hồ sơ cá nhân', ~{::content})}">
+<body>
+    <div th:fragment="content" th:classappend="${currentUser != null and currentUser.role.name() == 'STUDENT' ? 'container py-5 my-5' : ''}">
+        <style>
+            .profile-avatar-wrap { position: relative; display: inline-block; }
+            .profile-avatar-wrap .avatar-upload-btn {
+                position: absolute; bottom: 0; right: 0;
+                width: 36px; height: 36px; border-radius: 50%;
+                background: var(--bs-primary); color: #fff; border: 2px solid #fff;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            }
+            .profile-avatar-wrap .avatar-upload-btn:hover { background: #0a58ca; color: #fff; }
+            .profile-avatar { width: 160px; height: 160px; object-fit: cover; border-radius: 50%; border: 4px solid #e9ecef; }
+            .card-profile { border: none; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+            .nav-tabs .nav-link { border: none; color: #6c757d; font-weight: 500; }
+            .nav-tabs .nav-link.active { color: var(--bs-primary); border-bottom: 2px solid var(--bs-primary); background: transparent; }
+            .nav-tabs { border-bottom: 1px solid #dee2e6; }
+        </style>
+        <h1 class="h4 mb-4">Hồ sơ cá nhân</h1>
+
+        <div th:if="${profileSuccess}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${profileSuccess}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${profileError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${profileError}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${avatarSuccess}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${avatarSuccess}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${avatarError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${avatarError}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${passwordSuccess}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${passwordSuccess}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${passwordError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${passwordError}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="card card-profile h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="profile-avatar-wrap mx-auto mb-3">
+                            <img th:src="${(user.avatar != null and !user.avatar.isEmpty()) ? user.avatar : 'https://ui-avatars.com/api/?name=User&size=160&background=0d6efd&color=fff'}"
+                                 alt="Avatar" class="profile-avatar" id="profileAvatarImg"/>
+                            <form th:action="@{/profile/avatar}" method="post" enctype="multipart/form-data" class="d-inline" id="avatarForm">
+                                <label class="avatar-upload-btn mb-0" for="avatarFileInput" title="Chọn ảnh">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                                <input type="file" name="file" id="avatarFileInput" accept="image/*" class="d-none"/>
+                            </form>
+                        </div>
+                        <h5 class="card-title mb-1" th:text="${user.fullName}">Tên người dùng</h5>
+                        <p class="text-muted small mb-0">
+                            <span th:switch="${user.role?.name()}">
+                                <span th:case="'ADMIN'">Quản trị viên</span>
+                                <span th:case="'TEACHER'">Giảng viên</span>
+                                <span th:case="'STUDENT'">Học viên</span>
+                                <span th:case="*" th:text="${user.role}">Role</span>
+                            </span>
+                        </p>
+                        <p class="text-muted small mt-1" th:text="${user.email}">email@example.com</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card card-profile">
+                    <div class="card-body p-4">
+                        <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">Thông tin chung</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">Bảo mật</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="profileTabsContent">
+                            <div class="tab-pane fade show active" id="info" role="tabpanel">
+                                <form th:action="@{/profile/update}" th:object="${profileUpdateDTO}" method="post">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Họ tên</label>
+                                            <input type="text" th:field="*{fullName}" class="form-control" required maxlength="100"/>
+                                            <div th:if="${#fields.hasErrors('fullName')}" class="text-danger small" th:errors="*{fullName}"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Số điện thoại</label>
+                                            <input type="text" th:field="*{phoneNumber}" class="form-control" maxlength="20" placeholder="VD: 0901234567"/>
+                                            <div th:if="${#fields.hasErrors('phoneNumber')}" class="text-danger small" th:errors="*{phoneNumber}"></div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Địa chỉ</label>
+                                            <input type="text" th:field="*{address}" class="form-control" maxlength="255" placeholder="Địa chỉ hiện tại"/>
+                                            <div th:if="${#fields.hasErrors('address')}" class="text-danger small" th:errors="*{address}"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Trường học / Đơn vị công tác</label>
+                                            <input type="text" th:field="*{university}" class="form-control" list="profile-uni-list" maxlength="200" placeholder="Chọn hoặc nhập tên trường"/>
+                                            <datalist id="profile-uni-list">
+                                                <option value="Đại học Bách Khoa Hà Nội">
+                                                <option value="Đại học Bách Khoa TP.HCM">
+                                                <option value="Đại học Quốc gia Hà Nội">
+                                                <option value="Đại học Quốc gia TP.HCM">
+                                                <option value="Đại học FPT">
+                                                <option value="Đại học RMIT Việt Nam">
+                                                <option value="Đại học Kinh tế Quốc dân">
+                                                <option value="Đại học Kinh tế TP.HCM">
+                                                <option value="Đại học Sư phạm Hà Nội">
+                                                <option value="Đại học Sư phạm TP.HCM">
+                                                <option value="Đại học Cần Thơ">
+                                                <option value="Đại học Đà Nẵng">
+                                                <option value="Đại học Huế">
+                                                <option value="Học viện Công nghệ Bưu chính Viễn thông">
+                                                <option value="Đại học Ngoại thương">
+                                                <option value="Đại học Y Hà Nội">
+                                                <option value="Đại học Y Dược TP.HCM">
+                                                <option value="Đại học Luật Hà Nội">
+                                            </datalist>
+                                            <div th:if="${#fields.hasErrors('university')}" class="text-danger small" th:errors="*{university}"></div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Giới thiệu ngắn (Bio)</label>
+                                            <textarea th:field="*{bio}" class="form-control" rows="4" maxlength="500" placeholder="Viết vài dòng về bạn..."></textarea>
+                                            <div th:if="${#fields.hasErrors('bio')}" class="text-danger small" th:errors="*{bio}"></div>
+                                        </div>
+                                        <!-- Phần riêng Giảng viên -->
+                                        <div class="col-12" th:if="${user.role != null and user.role.name() == 'TEACHER'}">
+                                            <hr class="my-3"/>
+                                            <h6 class="text-muted mb-3"><i class="fas fa-chalkboard-teacher me-2"></i>Hồ sơ giảng viên</h6>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Số CCCD</label>
+                                                    <input type="text" th:field="*{cccdNumber}" class="form-control" maxlength="12" readonly placeholder="012345678901"/>
+                                                    <small class="form-text text-muted">Số CCCD không thể thay đổi.</small>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Kinh nghiệm giảng dạy</label>
+                                                    <select th:field="*{experience}" class="form-select">
+                                                        <option value="">-- Chọn --</option>
+                                                        <option value="Chưa có kinh nghiệm">Chưa có kinh nghiệm</option>
+                                                        <option value="Dưới 2 năm">Dưới 2 năm</option>
+                                                        <option value="Trên 2 năm">Trên 2 năm</option>
+                                                        <option value="Trên 5 năm">Trên 5 năm</option>
+                                                    </select>
+                                                    <div th:if="${#fields.hasErrors('experience')}" class="text-danger small" th:errors="*{experience}"></div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Link Hồ sơ (Portfolio)</label>
+                                                    <input type="url" th:field="*{portfolioUrl}" class="form-control bg-light" maxlength="500" placeholder="https://drive.google.com/..." readonly/>
+                                                    <small class="form-text text-muted">Để thay đổi hồ sơ, vui lòng liên hệ Admin.</small>
+                                                    <div th:if="${#fields.hasErrors('portfolioUrl')}" class="text-danger small" th:errors="*{portfolioUrl}"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <button type="submit" class="btn btn-primary">Lưu thông tin</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-pane fade" id="security" role="tabpanel">
+                                <form th:action="@{/profile/password}" th:object="${changePasswordDTO}" method="post">
+                                    <div class="mb-3">
+                                        <label class="form-label">Mật khẩu hiện tại</label>
+                                        <input type="password" th:field="*{oldPassword}" class="form-control" required/>
+                                        <div th:if="${#fields.hasErrors('oldPassword')}" class="text-danger small" th:errors="*{oldPassword}"></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Mật khẩu mới</label>
+                                        <input type="password" th:field="*{newPassword}" class="form-control" required minlength="4"/>
+                                        <div th:if="${#fields.hasErrors('newPassword')}" class="text-danger small" th:errors="*{newPassword}"></div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Xác nhận mật khẩu mới</label>
+                                        <input type="password" th:field="*{confirmPassword}" class="form-control" required/>
+                                        <div th:if="${#fields.hasErrors('confirmPassword')}" class="text-danger small" th:errors="*{confirmPassword}"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                var input = document.getElementById('avatarFileInput');
+                var form = document.getElementById('avatarForm');
+                if (input && form) {
+                    input.addEventListener('change', function() {
+                        if (this.files && this.files.length) form.submit();
+                    });
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>

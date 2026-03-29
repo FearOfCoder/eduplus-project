@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Chi tiết người dùng', ~{::content})}">
+<body>
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h4 fw-bold mb-0">Chi tiết người dùng</h1>
+            <a th:href="@{/admin/users}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
+        </div>
+
+        <div th:if="${user}" class="card">
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Họ tên</h6>
+                        <p class="fw-bold" th:text="${user.fullName}">—</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Email</h6>
+                        <p th:text="${user.email}">—</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Vai trò</h6>
+                        <p th:text="${user.role != null ? user.role.name() : '—'}">—</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Trạng thái</h6>
+                        <span th:if="${user.status != null and user.status.name() == 'ACTIVE'}" class="badge bg-success">Active</span>
+                        <span th:if="${user.status != null and user.status.name() == 'PENDING'}" class="badge bg-warning text-dark">Chờ duyệt</span>
+                        <span th:if="${user.status != null and user.status.name() == 'REJECTED'}" class="badge bg-danger">Từ chối</span>
+                        <span th:if="${user.status != null and user.status.name() == 'BANNED'}" class="badge bg-dark">Bị cấm</span>
+                    </div>
+                </div>
+                <div class="row mb-3" th:if="${user.phoneNumber != null and !user.phoneNumber.isEmpty()}">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Số điện thoại</h6>
+                        <p th:text="${user.phoneNumber}">—</p>
+                    </div>
+                </div>
+                <div class="row mb-3" th:if="${user.bio != null and !user.bio.isEmpty()}">
+                    <div class="col-12">
+                        <h6 class="text-muted">Giới thiệu</h6>
+                        <div class="bg-light p-3 rounded"><p class="mb-0" style="white-space: pre-wrap;" th:text="${user.bio}">—</p></div>
+                    </div>
+                </div>
+                <div class="mt-4" th:if="${user.role != null and user.role.name() == 'TEACHER' and user.status != null and user.status.name() == 'PENDING'}">
+                    <form th:action="@{/admin/teacher/approve/{id}(id=${user.id})}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-check me-1"></i> Duyệt</button>
+                    </form>
+                    <form th:action="@{/admin/teacher/reject/{id}(id=${user.id})}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Từ chối hồ sơ?');"><i class="fas fa-times me-1"></i> Từ chối</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

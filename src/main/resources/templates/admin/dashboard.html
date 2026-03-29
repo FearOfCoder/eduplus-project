@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Tài chính Nền tảng', ~{::content})}">
+<body>
+    <div th:fragment="content" class="admin-finance-dashboard">
+        <style>
+            .admin-finance-dashboard .card:hover { transform: none !important; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075) !important; }
+        </style>
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+        <h1 class="h4 fw-bold mb-4">Tài chính Nền tảng</h1>
+
+        <div th:if="${withdrawError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${withdrawError}">Lỗi</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+        <div th:if="${param.withdrawSuccess != null}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>Rút tiền thành công.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng"></button>
+        </div>
+
+        <!-- Top Cards - Modern Stat Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card stat-card-edup h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap icon-teal">
+                            <i class="fas fa-wallet fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">Số dư khả dụng nền tảng</div>
+                            <div class="stat-value" th:text="|${#numbers.formatDecimal(availableBalance != null ? availableBalance : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card stat-card-edup h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap icon-primary">
+                            <i class="fas fa-chart-line fa-lg"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">Tổng thu phí nền tảng tích lũy</div>
+                            <div class="stat-value" th:text="|${#numbers.formatDecimal(totalPlatformRevenue != null ? totalPlatformRevenue : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout 4-8: Form rút tiền | Tabs bảng -->
+        <div class="row mb-4">
+            <div class="col-xl-4 col-lg-5 mb-4">
+                <div class="card bg-white border-0 rounded-4 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 fw-bold">Yêu cầu rút tiền</div>
+                    <div class="card-body">
+                        <form th:action="@{/admin/withdraw}" method="post">
+                            <div class="alert alert-info" style="font-size: 0.9rem;">
+                                <strong>Thông tin nhận tiền (Cố định):</strong><br>
+                                Ngân hàng: <b>Techcombank</b><br>
+                                STK: <b>09117773682011</b><br>
+                                Chủ thẻ: <b>NGUYEN MANH HUNG</b><br>
+                                Chức vụ: <b>CEO EduPlus</b>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Số tiền rút (₫)</label>
+                                <input type="number" name="amount" class="form-control" required min="0" step="any"
+                                       th:max="${availableBalance != null ? availableBalance : 0}"/>
+                                <small class="text-muted">Tối đa: <span th:text="|${#numbers.formatDecimal(availableBalance != null ? availableBalance : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</span></small>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Lý do rút tiền</label>
+                                <textarea name="reason" class="form-control" rows="2" placeholder="Ví dụ: Rút tiền trả lương tháng 3..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Xác nhận rút tiền</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-8 col-lg-7 mb-4">
+                <div class="card table-card-edup h-100">
+                    <div class="card-body">
+                        <ul class="nav nav-tabs mb-3" id="adminFinanceTabs">
+                            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#historyTab">Lịch sử rút tiền</a></li>
+                            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#revenueTab">Chi tiết thu phí</a></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="historyTab">
+                                <div class="table-responsive">
+                                    <table id="adminHistoryTable" class="table table-hover align-middle w-100 mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Ngày rút</th>
+                                                <th class="text-end">Số tiền</th>
+                                                <th>Lý do</th>
+                                                <th>Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="w : ${adminWithdrawalHistory}">
+                                                <td th:text="${#temporals.format(w.requestDate, 'dd/MM/yyyy HH:mm')}">--</td>
+                                                <td class="text-end" th:attr="data-order=${w.amount != null ? w.amount : 0}" th:text="|${#numbers.formatDecimal(w.amount != null ? w.amount : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</td>
+                                                <td th:text="${w.reason}">Lý do...</td>
+                                                <td class="align-middle">
+                                                    <span th:if="${w.status == 'SUCCESS' or w.status == 'Thành công'}" class="badge bg-success rounded-pill px-3 py-2">Thành công</span>
+                                                    <span th:if="${w.status == 'PENDING' or w.status == 'Chờ duyệt'}" class="badge bg-warning text-dark rounded-pill px-3 py-2">Chờ duyệt</span>
+                                                    <span th:if="${w.status == 'REJECTED' or w.status == 'Từ chối'}" class="badge bg-danger rounded-pill px-3 py-2">Từ chối</span>
+                                                    <span th:if="${w.status == null or (w.status != 'SUCCESS' and w.status != 'Thành công' and w.status != 'PENDING' and w.status != 'Chờ duyệt' and w.status != 'REJECTED' and w.status != 'Từ chối')}" class="badge bg-secondary rounded-pill px-3 py-2">—</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div th:if="${adminWithdrawalHistory != null and #lists.isEmpty(adminWithdrawalHistory)}" class="p-4 text-muted text-center">Chưa có giao dịch rút tiền.</div>
+                            </div>
+                            <div class="tab-pane fade" id="revenueTab">
+                                <div class="table-responsive">
+                                    <table id="adminRevenueTable" class="table table-hover align-middle w-100 mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Thời gian</th>
+                                                <th>Khóa học</th>
+                                                <th>Giảng viên</th>
+                                                <th class="text-end">Giá bán</th>
+                                                <th class="text-end">Phí nền tảng thu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="p : ${successPayments}">
+                                                <td th:text="${#temporals.format(p.createdAt != null ? p.createdAt : p.paymentDate, 'dd/MM/yyyy HH:mm')}">--</td>
+                                                <td th:text="${p.course != null ? p.course.title : '—'}">—</td>
+                                                <td th:text="${p.course != null and p.course.teacher != null ? p.course.teacher.fullName : '—'}">—</td>
+                                                <td class="text-end" th:attr="data-order=${p.amount != null ? p.amount : 0}" th:text="|${#numbers.formatDecimal(p.amount != null ? p.amount : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</td>
+                                                <td class="text-end" th:attr="data-order=${p.platformShare != null ? p.platformShare : 0}" th:text="|${#numbers.formatDecimal(p.platformShare != null ? p.platformShare : 0, 0, 'COMMA', 0, 'POINT')} ₫|">0 ₫</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div th:if="${successPayments != null and #lists.isEmpty(successPayments)}" class="p-4 text-muted text-center">Chưa có giao dịch thu phí.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script>
+        $.fn.dataTable.ext.order['dom-data-order'] = function (settings, col) {
+            return this.api().column(col, { order: 'index' }).nodes().map(function (td) {
+                var v = $(td).attr('data-order');
+                return v === undefined || v === '' ? 0 : parseFloat(v);
+            });
+        };
+        $(document).ready(function() {
+            var lang = {
+                "search": "Tìm kiếm:",
+                "lengthMenu": "Hiển thị _MENU_ dòng",
+                "info": "Hiển thị từ _START_ đến _END_ của _TOTAL_",
+                "infoEmpty": "Không có dữ liệu",
+                "zeroRecords": "Không tìm thấy kết quả",
+                "paginate": { "first": "Đầu", "last": "Cuối", "next": "Tiếp", "previous": "Trước" }
+            };
+            if ($('#adminHistoryTable').length > 0) {
+                $('#adminHistoryTable').DataTable({
+                    "language": lang,
+                    "order": [ [ 0, "desc" ] ],
+                    "columnDefs": [ { "targets": 1, "orderDataType": "dom-data-order" } ]
+                });
+            }
+            if ($('#adminRevenueTable').length > 0) {
+                $('#adminRevenueTable').DataTable({
+                    "language": lang,
+                    "order": [ [ 0, "desc" ] ],
+                    "columnDefs": [ { "targets": [ 3, 4 ], "orderDataType": "dom-data-order" } ]
+                });
+            }
+        });
+        </script>
+    </div>
+</body>
+</html>

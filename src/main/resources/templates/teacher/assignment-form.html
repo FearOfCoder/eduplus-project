@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout(${mode == 'create' ? 'Tạo bài tập' : 'Chỉnh sửa bài tập'}, ~{::content})}">
+<body>
+    <div th:fragment="content">
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1" th:text="${mode == 'create'} ? 'Tạo bài tập mới' : 'Chỉnh sửa bài tập'">Bài tập</h1>
+            <p class="mb-0 text-muted" th:text="${course != null and course.title != null ? course.title : 'Khóa học'}">Tên khóa học</p>
+        </div>
+        <div>
+            <a th:href="@{|/teacher/courses/${course.id}/assignments|}" class="btn btn-outline-secondary btn-sm">
+                Danh sách bài tập
+            </a>
+        </div>
+    </div>
+
+    <form th:action="${mode == 'create'} ?
+                     @{|/teacher/courses/${course.id}/assignments|} :
+                     @{|/teacher/assignments/${assignment.id}|}"
+          method="post"
+          class="card shadow-sm border-0">
+        <div class="card-body">
+            <div th:if="${error != null}" class="alert alert-danger" th:text="${error}"></div>
+
+            <div class="mb-3">
+                <label class="form-label" for="title">Tiêu đề bài tập <span class="text-danger">*</span></label>
+                <input type="text" 
+                       name="title"
+                       id="title"
+                       th:value="${assignment != null && assignment.title != null ? assignment.title : ''}"
+                       class="form-control"
+                       placeholder="Ví dụ: Bài tập số 1 - OOP cơ bản" 
+                       required
+                       autocomplete="off">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="description">Mô tả / Yêu cầu</label>
+                <textarea name="description" 
+                          id="description"
+                          class="form-control" 
+                          rows="5"
+                          placeholder="Mô tả chi tiết yêu cầu bài tập, cách nộp, tiêu chí chấm điểm..."><th:block th:text="${assignment != null && assignment.description != null ? assignment.description : ''}"></th:block></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="correctAnswer">Đáp án gợi ý / Tiêu chí chấm điểm (tùy chọn)</label>
+                <textarea name="correctAnswer" 
+                          id="correctAnswer"
+                          class="form-control" 
+                          rows="4"
+                          placeholder="Nhập đáp án mẫu hoặc tiêu chí chấm điểm để AI có thể chấm điểm tự động. Để trống nếu không có."><th:block th:text="${assignment != null && assignment.correctAnswer != null ? assignment.correctAnswer : ''}"></th:block></textarea>
+                <div class="form-text">Trường này giúp AI chấm điểm chính xác hơn. Nếu để trống, AI sẽ tự đánh giá dựa trên kiến thức chuẩn.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="dueDate">Hạn nộp (tùy chọn)</label>
+                <input type="datetime-local" 
+                       name="dueDate"
+                       id="dueDate"
+                       th:value="${dueDateFormatted != null ? dueDateFormatted : ''}"
+                       class="form-control">
+                <div class="form-text">Để trống nếu không giới hạn thời gian nộp.</div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a th:href="@{|/teacher/courses/${course.id}/assignments|}" class="btn btn-outline-secondary">Hủy</a>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </div>
+    </form>
+</div>
+    </div>
+</body>
+</html>
+

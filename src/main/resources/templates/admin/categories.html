@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Quản lý Danh mục', ~{::content})}">
+<body>
+    <div th:fragment="content">
+    <style>
+        .tree-parent-row { cursor: pointer; font-weight: bold; }
+        .tree-parent-row:hover { background-color: rgba(13, 110, 253, 0.06) !important; }
+        .tree-child-row { background-color: #fafafa; }
+        .tree-child-row:hover { background-color: rgba(0, 0, 0, 0.03) !important; }
+        .tree-toggle { display: inline-block; transition: transform 0.2s ease; width: 1.25rem; text-align: center; }
+        .tree-toggle[aria-expanded="true"] { transform: rotate(90deg); }
+        .tree-toggle-btn { background: none; border: none; padding: 0; cursor: pointer; color: #6c757d; }
+        .tree-toggle-btn:disabled { cursor: default; opacity: 0.5; }
+        tr.collapse { display: none; }
+        tr.collapse.show { display: table-row !important; }
+        .row-highlight { background-color: rgba(255, 193, 7, 0.2) !important; }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1"><i class="bi bi-grid-3x3-gap"></i> Quản lý Danh mục khóa học</h1>
+            <p class="text-muted mb-0 small">Danh mục phân cấp (Cha - Con)</p>
+        </div>
+        <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary btn-sm">Về Dashboard</a>
+    </div>
+
+    <div th:if="${message}" class="alert alert-info alert-dismissible fade show" role="alert"
+         th:text="${message}">Thông báo
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Toolbar: Tìm kiếm + Thêm danh mục -->
+    <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-body py-3">
+            <form method="get" th:action="@{/admin/categories}" class="row g-2 align-items-center flex-wrap">
+                <div class="col-auto flex-grow-1" style="min-width: 200px;">
+                    <label class="visually-hidden" for="keyword">Tìm theo tên danh mục</label>
+                    <input type="text" id="keyword" name="keyword" class="form-control form-control-sm"
+                           placeholder="Nhập tên danh mục cần tìm..."
+                           th:value="${keyword}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-search me-1"></i> Tìm kiếm
+                    </button>
+                </div>
+                <div class="col-auto ms-auto">
+                    <a th:href="@{/admin/categories/new}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> Thêm danh mục mới
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tree View -->
+    <div class="card table-card-edup overflow-hidden">
+        <div class="table-responsive" th:if="${categories != null && !#lists.isEmpty(categories)}">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 44px;"></th>
+                        <th class="text-center" style="width: 60px;">ID</th>
+                        <th>Tên danh mục</th>
+                        <th>Mô tả</th>
+                        <th class="text-end" style="width: 120px;">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <th:block th:each="category : ${categories}">
+                        <!-- Dòng Parent -->
+                        <tr class="tree-parent-row align-middle"
+                            th:classappend="${highlightCategoryIds != null && highlightCategoryIds.contains(category.id)} ? 'row-highlight' : ''"
+                            role="button"
+                            th:attr="data-bs-toggle=${category.children != null && !category.children.isEmpty() ? 'collapse' : null}, data-bs-target=${category.children != null && !category.children.isEmpty() ? ('#collapse-' + category.id) : null}"
+                            th:aria-expanded="${expandedCategoryIds != null && expandedCategoryIds.contains(category.id)}">
+                            <td class="text-muted p-3">
+                                <button type="button" class="tree-toggle-btn"
+                                        th:attr="data-bs-toggle=${category.children != null && !category.children.isEmpty() ? 'collapse' : null}, data-bs-target=${category.children != null && !category.children.isEmpty() ? ('#collapse-' + category.id) : null}, aria-expanded=${expandedCategoryIds != null && expandedCategoryIds.contains(category.id)}"
+                                        th:disabled="${category.children == null || category.children.isEmpty()}"
+                                        onclick="event.stopPropagation();">
+                                    <i class="bi bi-chevron-right tree-toggle" aria-hidden="true"
+                                       th:attr="aria-expanded=${expandedCategoryIds != null && expandedCategoryIds.contains(category.id)}"></i>
+                                </button>
+                            </td>
+                            <td class="text-center text-muted small p-3" th:text="${category.id}">1</td>
+                            <td class="p-3">
+                                <i class="bi bi-layers-fill text-primary me-2"></i>
+                                <strong th:text="${category.name}">Tên cha</strong>
+                            </td>
+                            <td class="p-3">
+                                <span class="text-muted text-truncate d-inline-block" style="max-width: 280px;"
+                                      th:title="${category.description}"
+                                      th:text="${(category.description != null && !category.description.isEmpty()) ? category.description : '—'}">Mô tả</span>
+                            </td>
+                            <td class="text-end p-3" onclick="event.stopPropagation();">
+                                <a th:href="@{|/admin/categories/${category.id}/edit|}" class="btn btn-sm btn-outline-primary me-1" title="Sửa">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <form th:action="@{|/admin/categories/${category.id}/delete|}" method="post" class="d-inline"
+                                      th:if="${!categoryIdsInUse.contains(category.id) && !categoryIdsWithChildren.contains(category.id)}"
+                                      onsubmit="return confirm('Bạn có chắc muốn xóa danh mục này?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <!-- Vùng Children (Collapse): id collapse-{id}, class collapse hoặc collapse show khi tìm kiếm -->
+                        <tr th:if="${category.children != null && !category.children.isEmpty()}"
+                            th:id="'collapse-' + ${category.id}"
+                            class="collapse tree-child-container"
+                            th:classappend="${expandedCategoryIds != null && expandedCategoryIds.contains(category.id)} ? 'show' : ''">
+                            <td colspan="5" class="p-0 border-0 bg-light">
+                                <div class="ps-4 py-2">
+                                    <table class="table table-hover mb-0 align-middle">
+                                        <tbody>
+                                            <tr th:each="child : ${category.children}"
+                                                class="tree-child-row"
+                                                th:classappend="${highlightCategoryIds != null && highlightCategoryIds.contains(child.id)} ? 'row-highlight' : ''">
+                                                <td class="p-3" style="width: 44px;"></td>
+                                                <td class="text-center text-muted small p-3" style="width: 60px;" th:text="${child.id}">2</td>
+                                                <td class="p-3 ps-4">
+                                                    <i class="bi bi-tag-fill text-secondary me-2"></i>
+                                                    <span th:text="${child.name}">Tên con</span>
+                                                </td>
+                                                <td class="p-3">
+                                                    <span class="text-muted text-truncate d-inline-block" style="max-width: 260px;"
+                                                          th:title="${child.description}"
+                                                          th:text="${(child.description != null && !child.description.isEmpty()) ? child.description : '—'}">Mô tả</span>
+                                                </td>
+                                                <td class="text-end p-3" style="width: 120px;">
+                                                    <a th:href="@{|/admin/categories/${child.id}/edit|}" class="btn btn-sm btn-outline-primary me-1" title="Sửa">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </a>
+                                                    <form th:action="@{|/admin/categories/${child.id}/delete|}" method="post" class="d-inline"
+                                                          th:if="${!categoryIdsInUse.contains(child.id)}"
+                                                          onsubmit="return confirm('Bạn có chắc muốn xóa danh mục này?');">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </th:block>
+                </tbody>
+            </table>
+        </div>
+        <div th:if="${categories == null || #lists.isEmpty(categories)}" class="text-center py-5 px-3">
+            <i class="bi bi-grid-3x3-gap text-muted mb-3 opacity-50" style="font-size: 3rem;"></i>
+            <p class="text-muted mb-0" th:text="${keyword != null && !#strings.isEmpty(keyword)} ? 'Không tìm thấy danh mục nào phù hợp.' : 'Chưa có danh mục nào.'">Chưa có danh mục nào.</p>
+            <p th:if="${keyword != null && !#strings.isEmpty(keyword)}" class="small text-muted mt-1">Thử đổi từ khóa hoặc <a th:href="@{/admin/categories}">xem tất cả</a>.</p>
+            <p th:unless="${keyword != null && !#strings.isEmpty(keyword)}" class="small text-muted mt-1">Thêm danh mục mới để bắt đầu.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.tree-parent-row [data-bs-toggle="collapse"]').forEach(function(btn) {
+        var targetSelector = btn.getAttribute('data-bs-target');
+        if (!targetSelector) return;
+        var target = document.querySelector(targetSelector);
+        if (!target) return;
+        var toggle = btn.querySelector('.tree-toggle');
+        if (!toggle) toggle = btn;
+        target.addEventListener('show.bs.collapse', function() {
+            toggle.setAttribute('aria-expanded', 'true');
+            btn.setAttribute('aria-expanded', 'true');
+        });
+        target.addEventListener('hide.bs.collapse', function() {
+            toggle.setAttribute('aria-expanded', 'false');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    });
+});
+</script>
+    </div>
+</body>
+</html>

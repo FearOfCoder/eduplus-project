@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Cấu hình hệ thống', ~{::content})}">
+<body>
+    <div th:fragment="content">
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1"><i class="fas fa-cog"></i> Cấu hình hệ thống</h1>
+            <p class="text-muted mb-0">Quản lý điều khoản và cấu hình chung</p>
+        </div>
+        <div>
+            <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Về Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Thông báo thành công -->
+    <div th:if="${param.success != null && param.success[0] == 'true'}" 
+         class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> Cập nhật cấu hình thành công!
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${logoSuccess}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> <span th:text="${logoSuccess}">Đã cập nhật logo.</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${logoError}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i> <span th:text="${logoError}">Lỗi</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="card bg-white rounded-4 shadow-sm border-0 p-4 mb-4">
+        <h4 class="fw-bold mb-4">Logo Website</h4>
+        <form th:action="@{/admin/settings/logo}" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Thay đổi Logo Website</label>
+                <div class="d-flex align-items-center gap-3">
+                    <img th:src="${siteLogo}" class="border rounded-3 p-2 bg-light" style="height: 80px; object-fit: contain;" alt="Logo hiện tại" onerror="this.src='/images/logoEduPlus.jpg';">
+                    <input type="file" class="form-control" name="logoFile" accept="image/png, image/jpeg, image/jpg" required style="max-width: 280px;">
+                </div>
+            </div>
+            <button type="submit" class="btn bg-primary text-white rounded-pill px-4 shadow-sm"><i class="fas fa-save me-2"></i>Lưu thay đổi</button>
+        </form>
+    </div>
+
+    <form th:action="@{/admin/settings/update}" method="post">
+        <!-- Cấu hình Phí nền tảng -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-info text-white">
+                <strong><i class="fas fa-percent"></i> Phí nền tảng (Platform Fee)</strong>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tỷ lệ phí nền tảng (%)</label>
+                    <p class="text-muted small mb-2">
+                        Tỷ lệ phần trăm mà nền tảng thu từ doanh thu mỗi khóa học. Giá trị này sẽ được áp dụng cho tất cả khóa học mới.
+                    </p>
+                    <div class="input-group" style="max-width: 200px;">
+                        <input type="number" 
+                               name="platformFee" 
+                               class="form-control" 
+                               min="0" 
+                               max="100" 
+                               step="1"
+                               th:value="${platformFee != null ? platformFee : '20'}"
+                               required>
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <div class="form-text">
+                        Ví dụ: 20 nghĩa là nền tảng thu 20% từ giá bán khóa học, giảng viên nhận 80%.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cấu hình Điều khoản -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <strong><i class="fas fa-file-contract"></i> Điều khoản cho Giảng viên</strong>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nội dung điều khoản</label>
+                    <p class="text-muted small mb-2">
+                        Nội dung này sẽ được hiển thị cho Giảng viên khi họ tạo khóa học mới. 
+                        Giảng viên phải đồng ý với điều khoản này trước khi gửi khóa học để duyệt.
+                    </p>
+                    <textarea name="teacherTerms" 
+                              class="form-control" 
+                              rows="10"
+                              placeholder="Nhập nội dung điều khoản..."
+                              th:text="${teacherTerms}"></textarea>
+                    <div class="form-text">
+                        Sử dụng xuống dòng để phân tách các điều khoản. Ví dụ: "1. Điều khoản đầu tiên\n2. Điều khoản thứ hai"
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary">Hủy</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Lưu cấu hình
+            </button>
+        </div>
+    </form>
+</div>
+    </div>
+</body>
+</html>

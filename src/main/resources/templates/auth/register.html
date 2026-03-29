@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng ký - EduPlus</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        /* 1. Panel trái: ảnh nền + gradient Indigo–Pink + sóng SVG */
+        .auth-left-panel {
+            position: relative;
+            width: 45%;
+            min-height: 100vh;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.85) 0%, rgba(236, 72, 153, 0.85) 100%),
+                        url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1471&auto=format&fit=crop') center/cover no-repeat;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 2rem 5rem 2rem 2rem;
+            color: #fff;
+        }
+        .auth-left-panel::after {
+            content: '';
+            position: absolute;
+            top: 0; right: -1px; bottom: 0;
+            width: 150px;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 1080' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200,0 L200,1080 L0,1080 C50,900 150,700 50,540 C-50,380 150,180 0,0 Z' fill='%23ffffff'/%3E%3C/svg%3E");
+            background-size: 100% 100%;
+            z-index: 2;
+        }
+        .auth-left-panel .brand-inner { position: relative; z-index: 1; text-align: left; max-width: 360px; }
+        .auth-left-panel .brand-logo { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.5px; }
+        .auth-left-panel .brand-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; line-height: 1.3; }
+        .auth-left-panel .brand-sub { font-size: 0.95rem; opacity: 0.95; line-height: 1.5; }
+        .auth-text-wrapper .brand-logo,
+        .auth-text-wrapper .brand-title,
+        .auth-text-wrapper .brand-sub,
+        .auth-text-wrapper h1,
+        .auth-text-wrapper h2,
+        .auth-text-wrapper p { text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+        .auth-wrap { min-height: 100vh; display: flex; flex-wrap: nowrap; }
+        .auth-right-panel {
+            width: 55%;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        .auth-form-card { max-width: 650px; }
+        .auth-form-box { width: 100%; }
+        .auth-form-box .form-title { font-size: 1.6rem; font-weight: 700; color: #2D3436; margin-bottom: 0.5rem; }
+        .auth-form-box .form-sub { font-size: 0.9rem; color: #636e72; margin-bottom: 1.25rem; }
+        .auth-form-box .form-group { margin-bottom: 1rem; background: none !important; }
+        .auth-form-box .auth-switch { margin-top: 1.25rem; text-align: center; font-size: 0.9rem; color: #636e72; }
+        .auth-form-box .auth-switch a { color: var(--brand-primary); font-weight: 600; text-decoration: none; }
+        .auth-form-box .auth-switch a:hover { text-decoration: underline; }
+        .auth-form-box label { font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem; }
+
+        /* 2. Ép buộc Input trong suốt & có hiệu ứng mượt */
+        .minimal-input {
+            background-color: transparent !important;
+            border: none !important;
+            border-bottom: 2px solid #e2e8f0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 12px 0 !important;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .minimal-input:focus {
+            border-bottom-color: var(--brand-primary) !important;
+            background-color: transparent !important;
+            outline: none !important;
+        }
+        .form-select.minimal-input {
+            background-color: transparent !important;
+            cursor: pointer;
+        }
+
+        /* 3. Nút bấm gradient + hover phát sáng hồng tím */
+        .btn-auth {
+            background: var(--gradient-brand);
+            border: none;
+            border-radius: 50px !important;
+            padding: 12px 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        }
+        .btn-auth:hover {
+            filter: brightness(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(236, 72, 153, 0.45);
+        }
+
+        /* 4. Animation load trang mượt mà */
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-section-title { font-size: 0.9rem; font-weight: 600; color: #2D3436; margin-bottom: 0.75rem; padding-bottom: 0.4rem; border-bottom: 1px solid #e0e0e0; }
+        .role-card { cursor: pointer; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem; transition: all 0.2s; height: 100%; background: #fff; }
+        .role-card:hover { border-color: var(--brand-primary); background: rgba(79, 70, 229, 0.08); }
+        .role-card.selected { border-color: var(--brand-primary); background: rgba(79, 70, 229, 0.12); }
+        .role-card input { display: none; }
+        .role-card .role-icon { font-size: 1.75rem; color: var(--brand-primary); margin-bottom: 0.35rem; }
+        .teacher-only { display: none; background: transparent !important; }
+        .teacher-only.show { display: block; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; background: transparent !important; }
+
+        @media (max-width: 991.98px) {
+            .auth-left-panel { display: none !important; }
+            .auth-right-panel { width: 100%; padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrap">
+        <div class="auth-left-panel d-none d-lg-flex">
+            <div class="brand-inner auth-text-wrapper">
+                <div class="brand-logo">EduPlus</div>
+                <h2 class="brand-title">Chào mừng đến với EduPlus</h2>
+                <p class="brand-sub mb-0">Nền tảng học tập trực tuyến hàng đầu. Tạo tài khoản để khám phá hàng ngàn khóa học.</p>
+            </div>
+        </div>
+        <div class="auth-right-panel">
+            <div class="auth-form-card bg-white p-4 p-md-5 rounded-4 shadow-sm w-100">
+                <div class="auth-form-box">
+                <h1 class="form-title">Tạo tài khoản mới</h1>
+                <p class="form-sub">Điền thông tin bên dưới để đăng ký.</p>
+
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show py-2">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <form method="post" th:action="@{/register}" th:object="${registerDTO}" id="registerForm">
+                    <div class="fade-in-up">
+                    <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger py-2">
+                        <div th:each="err : ${#fields.allErrors()}" th:text="${err}" class="mb-1"></div>
+                    </div>
+
+                    <p class="form-section-title">Bước 1: Chọn vai trò</p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="role-card d-block mb-0" id="roleCardStudent" for="roleStudent">
+                                <input type="radio" th:field="*{role}" id="roleStudent" value="STUDENT" required>
+                                <div class="role-icon"><i class="fas fa-user-graduate"></i></div>
+                                <strong>Học viên</strong>
+                                <p class="small text-muted mb-0 mt-1">Tôi muốn tìm khóa học</p>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="role-card d-block mb-0" id="roleCardTeacher" for="roleTeacher">
+                                <input type="radio" th:field="*{role}" id="roleTeacher" value="TEACHER">
+                                <div class="role-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                                <strong>Giảng viên</strong>
+                                <p class="small text-muted mb-0 mt-1">Tôi muốn giảng dạy & chia sẻ</p>
+                            </label>
+                        </div>
+                    </div>
+
+                    <p class="form-section-title">Bước 2: Thông tin tài khoản</p>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Họ tên <span class="text-danger">*</span></label>
+                                <input type="text" th:field="*{fullName}" class="form-control minimal-input" required maxlength="100" placeholder="Nguyễn Văn A"/>
+                            </div>
+                            <div th:if="${#fields.hasErrors('fullName')}" class="text-danger small" th:errors="*{fullName}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Email <span class="text-danger">*</span></label>
+                                <input type="email" th:field="*{email}" class="form-control minimal-input" required placeholder="email@example.com"/>
+                            </div>
+                            <div th:if="${#fields.hasErrors('email')}" class="text-danger small" th:errors="*{email}"></div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Username <span class="text-danger">*</span></label>
+                                <input type="text" th:field="*{username}" class="form-control minimal-input" required minlength="4" maxlength="50" placeholder="Tối thiểu 4 ký tự"/>
+                            </div>
+                            <div th:if="${#fields.hasErrors('username')}" class="text-danger small" th:errors="*{username}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Mật khẩu <span class="text-danger">*</span></label>
+                                <input type="password" th:field="*{password}" class="form-control minimal-input" required minlength="4" placeholder="Tối thiểu 4 ký tự"/>
+                            </div>
+                            <div th:if="${#fields.hasErrors('password')}" class="text-danger small" th:errors="*{password}"></div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                                <input type="password" th:field="*{confirmPassword}" class="form-control minimal-input" required placeholder="Nhập lại mật khẩu"/>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Số điện thoại</label>
+                                <input type="text" th:field="*{phoneNumber}" class="form-control minimal-input" maxlength="20" placeholder="VD: 0901234567" id="phoneNumber"/>
+                            </div>
+                            <div class="text-danger small" id="phoneError"></div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-2">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label>Địa chỉ</label>
+                                <input type="text" th:field="*{address}" class="form-control minimal-input" maxlength="255" placeholder="Địa chỉ hiện tại"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-2">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Nghề nghiệp</label>
+                                <input type="text" th:field="*{occupation}" class="form-control minimal-input" maxlength="100" placeholder="VD: Học sinh, Sinh viên..."/>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Trường / Đơn vị <span class="text-danger" id="universityRequiredStar">*</span></label>
+                                <input type="text" th:field="*{university}" class="form-control minimal-input" list="uni-list" maxlength="200" placeholder="Chọn hoặc nhập tên trường" id="university"/>
+                            </div>
+                            <datalist id="uni-list">
+                                <option value="Đại học Bách Khoa Hà Nội">
+                                <option value="Đại học Bách Khoa TP.HCM">
+                                <option value="Đại học Quốc gia Hà Nội">
+                                <option value="Đại học Quốc gia TP.HCM">
+                                <option value="Đại học FPT">
+                                <option value="Đại học RMIT Việt Nam">
+                                <option value="Đại học Kinh tế Quốc dân">
+                                <option value="Đại học Kinh tế TP.HCM">
+                                <option value="Đại học Sư phạm Hà Nội">
+                                <option value="Đại học Sư phạm TP.HCM">
+                                <option value="Đại học Cần Thơ">
+                                <option value="Đại học Đà Nẵng">
+                                <option value="Đại học Huế">
+                                <option value="Học viện Công nghệ Bưu chính Viễn thông">
+                                <option value="Đại học Ngoại thương">
+                                <option value="Đại học Y Hà Nội">
+                                <option value="Đại học Y Dược TP.HCM">
+                                <option value="Đại học Luật Hà Nội">
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="teacher-only rounded-3 p-3 mb-3" id="teacherFields">
+                        <p class="form-section-title mb-2"><i class="fas fa-id-card me-2"></i>Hồ sơ giảng viên</p>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Số CCCD <span class="text-danger">*</span> (12 số)</label>
+                                    <input type="text" th:field="*{cccdNumber}" class="form-control minimal-input" maxlength="12" placeholder="012345678901" id="cccdNumber" pattern="[0-9]{12}"/>
+                                </div>
+                                <div th:if="${#fields.hasErrors('cccdNumber')}" class="text-danger small" th:errors="*{cccdNumber}"></div>
+                                <div class="text-danger small" id="cccdError"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Kinh nghiệm <span class="text-danger">*</span></label>
+                                    <select th:field="*{experience}" class="form-select minimal-input" id="experience">
+                                        <option value="">-- Chọn --</option>
+                                        <option value="Chưa có kinh nghiệm">Chưa có kinh nghiệm</option>
+                                        <option value="Dưới 2 năm">Dưới 2 năm</option>
+                                        <option value="Trên 2 năm">Trên 2 năm</option>
+                                        <option value="Trên 5 năm">Trên 5 năm</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label><i class="fas fa-link me-1"></i> Link Hồ sơ (Google Drive) <span class="text-danger">*</span></label>
+                            <input type="url" th:field="*{portfolioUrl}" class="form-control minimal-input" maxlength="500" placeholder="https://drive.google.com/..." id="portfolioUrl"/>
+                            <small class="form-text text-muted">CV, chứng chỉ, dự án (nếu có)</small>
+                        </div>
+                        <div class="alert alert-info small mb-0 py-2">Tài khoản giảng viên cần Admin xét duyệt trong 24h.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-auth w-100 text-white py-3 mt-2 mb-2" id="submitBtn">Đăng ký</button>
+
+                    <div class="d-flex align-items-center my-4">
+                        <hr class="flex-grow-1 text-muted">
+                        <span class="mx-3 text-muted" style="font-size: 0.85rem; font-weight: 500;">Hoặc tiếp tục với</span>
+                        <hr class="flex-grow-1 text-muted">
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-secondary w-100 rounded-pill d-flex align-items-center justify-content-center py-2">
+                                <i class="fab fa-google text-danger me-2"></i> Google
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-secondary w-100 rounded-pill d-flex align-items-center justify-content-center py-2">
+                                <i class="fab fa-facebook-f text-primary me-2"></i> Facebook
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </form>
+
+                <p class="auth-switch mb-0">Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+(function() {
+    var roleStudent = document.getElementById('roleStudent');
+    var roleTeacher = document.getElementById('roleTeacher');
+    var roleCardStudent = document.getElementById('roleCardStudent');
+    var roleCardTeacher = document.getElementById('roleCardTeacher');
+    var teacherFields = document.getElementById('teacherFields');
+    var phoneNumber = document.getElementById('phoneNumber');
+    var phoneError = document.getElementById('phoneError');
+    var cccdNumber = document.getElementById('cccdNumber');
+    var cccdError = document.getElementById('cccdError');
+    var portfolioUrlInput = document.getElementById('portfolioUrl');
+    var universityInput = document.getElementById('university');
+    var experienceSelect = document.getElementById('experience');
+    var universityRequiredStar = document.getElementById('universityRequiredStar');
+    function toggleTeacherFields() {
+        var isTeacher = roleTeacher.checked;
+        roleCardStudent.classList.toggle('selected', roleStudent.checked);
+        roleCardTeacher.classList.toggle('selected', isTeacher);
+        if (isTeacher) {
+            teacherFields.classList.add('show');
+            teacherFields.style.display = 'block';
+            cccdNumber.setAttribute('required', 'required');
+            if (portfolioUrlInput) { portfolioUrlInput.setAttribute('required', 'required'); portfolioUrlInput.disabled = false; }
+            if (universityInput) { universityInput.setAttribute('required', 'required'); universityInput.disabled = false; }
+            if (universityRequiredStar) { universityRequiredStar.style.display = 'inline'; }
+            if (experienceSelect) { experienceSelect.setAttribute('required', 'required'); experienceSelect.disabled = false; }
+        } else {
+            teacherFields.classList.remove('show');
+            teacherFields.style.display = 'none';
+            cccdNumber.removeAttribute('required');
+            if (portfolioUrlInput) { portfolioUrlInput.removeAttribute('required'); portfolioUrlInput.disabled = true; portfolioUrlInput.value = ''; }
+            if (universityInput) { universityInput.removeAttribute('required'); universityInput.disabled = false; }
+            if (universityRequiredStar) { universityRequiredStar.style.display = 'none'; }
+            if (experienceSelect) { experienceSelect.removeAttribute('required'); experienceSelect.disabled = true; experienceSelect.value = ''; }
+            cccdNumber.value = '';
+            phoneError.textContent = '';
+            cccdError.textContent = '';
+        }
+    }
+    function validatePhone() {
+        var v = (phoneNumber.value || '').trim();
+        phoneError.textContent = '';
+        if (v.length === 0) return true;
+        if (!/^[0-9+\-\s]+$/.test(v)) { phoneError.textContent = 'Số điện thoại chỉ được chứa chữ số.'; return false; }
+        return true;
+    }
+    function validateCccd() {
+        var v = (cccdNumber.value || '').trim();
+        cccdError.textContent = '';
+        if (!teacherFields.classList.contains('show')) return true;
+        if (v.length !== 12 || !/^[0-9]{12}$/.test(v)) { cccdError.textContent = 'CCCD phải đúng 12 chữ số.'; return false; }
+        return true;
+    }
+    roleStudent.addEventListener('change', toggleTeacherFields);
+    roleTeacher.addEventListener('change', toggleTeacherFields);
+    toggleTeacherFields();
+    phoneNumber.addEventListener('input', validatePhone);
+    phoneNumber.addEventListener('blur', validatePhone);
+    cccdNumber.addEventListener('input', validateCccd);
+    cccdNumber.addEventListener('blur', validateCccd);
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        if (!validatePhone() || !validateCccd()) e.preventDefault();
+    });
+})();
+    </script>
+</body>
+</html>

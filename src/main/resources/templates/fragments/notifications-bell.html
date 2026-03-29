@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+    <!-- Notification Bell - navbar (nền sáng), ẩn với Admin -->
+    <div th:fragment="bell" class="dropdown" sec:authorize="isAuthenticated()" th:if="${currentUser == null or currentUser.role == null or currentUser.role.name() != 'ADMIN'}">
+        <a class="nav-link position-relative py-2 px-2" href="#" id="notificationBell" role="button"
+           data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+            <i class="fas fa-bell fa-lg text-dark"></i>
+            <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style="font-size: 0.65rem; display: none;">0</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" style="min-width: 320px; max-height: 400px; overflow-y: auto;"
+            aria-labelledby="notificationBell">
+            <li class="px-3 py-2 border-bottom"><h6 class="mb-0 fw-bold"><i class="fas fa-bell me-2"></i>Thông báo</h6></li>
+            <li><div id="notificationList" class="p-2"><div class="text-center text-muted py-4 small" id="notificationEmpty">Chưa có thông báo</div></div></li>
+        </ul>
+    </div>
+
+    <!-- Notification Bell - sidebar dashboard (nền tối), ẩn với Admin -->
+    <div th:fragment="bellSidebar" class="mb-2" sec:authorize="isAuthenticated()" th:if="${currentUser == null or currentUser.role == null or currentUser.role.name() != 'ADMIN'}">
+        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle py-2 px-2 rounded"
+           href="#" id="notificationBellSidebar" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+            <i class="fas fa-bell me-2"></i>
+            <span class="flex-grow-1">Thông báo</span>
+            <span id="notificationBadgeSidebar" class="badge bg-danger rounded-pill" style="font-size: 0.65rem; display: none;">0</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 py-2" style="min-width: 320px; max-height: 400px; overflow-y: auto;"
+            aria-labelledby="notificationBellSidebar">
+            <li class="px-3 py-2 border-bottom"><h6 class="mb-0 fw-bold"><i class="fas fa-bell me-2"></i>Thông báo</h6></li>
+            <li><div id="notificationListSidebar" class="p-2"><div class="text-center text-muted py-4 small" id="notificationEmptySidebar">Chưa có thông báo</div></div></li>
+        </ul>
+    </div>
+</body>
+</html>

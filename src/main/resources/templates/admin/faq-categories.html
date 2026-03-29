@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Quản lý Danh mục FAQ', ~{::content})}">
+<body>
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h4 fw-bold mb-0"><i class="fas fa-folder-tree me-2"></i>Quản lý Danh mục FAQ</h1>
+            <a th:href="@{/admin/faq}" class="btn btn-outline-secondary rounded-pill px-3 py-2"><i class="fas fa-arrow-left me-1"></i>Về Quản lý FAQ</a>
+        </div>
+
+        <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${message}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card table-card-edup border-0 rounded-4 shadow-sm">
+            <div class="card-header py-3 border-0 d-flex justify-content-between align-items-center" style="background: #F8FAFC;">
+                <h2 class="h5 mb-0 fw-bold">Danh sách danh mục</h2>
+                <button type="button" class="btn bg-gradient-brand text-white rounded-pill px-3 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                    <i class="fas fa-plus me-1"></i>Thêm danh mục
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Icon</th>
+                                <th>Tên danh mục</th>
+                                <th>Số câu hỏi</th>
+                                <th style="width: 140px;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="c : ${categories}">
+                                <td th:text="${c.id}">1</td>
+                                <td><i th:class="${c.icon} + ' text-muted'" style="font-size: 1.1rem;"></i></td>
+                                <td th:text="${c.name}">Tên</td>
+                                <td th:text="${c.faqs != null ? #lists.size(c.faqs) : 0}">0</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#categoryModal"
+                                            th:attr="data-id=${c.id}, data-name=${c.name}, data-icon=${c.icon}"><i class="fas fa-edit"></i></button>
+                                    <form th:action="@{/admin/faq/categories/{id}/delete(id=${c.id})}" method="post" class="d-inline" onsubmit="return confirm('Xóa danh mục này?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" th:disabled="${c.faqs != null && !c.faqs.isEmpty()}"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${categories != null && #lists.isEmpty(categories)}" class="p-4 text-muted text-center">Chưa có danh mục. Hãy thêm danh mục mới.</div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="categoryModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold" id="categoryModalTitle">Thêm danh mục</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="categoryForm" method="post" th:action="@{/admin/faq/categories}" th:attr="data-add-url=@{/admin/faq/categories}, data-edit-url-base=@{/admin/faq/categories/}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tên danh mục</label>
+                                <input type="text" name="name" id="catName" class="form-control" required maxlength="150" placeholder="Ví dụ: Thanh toán">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Icon (FontAwesome class)</label>
+                                <input type="text" name="icon" id="catIcon" class="form-control" maxlength="80" placeholder="fas fa-wallet">
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn bg-gradient-brand text-white rounded-pill px-4">Lưu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            var modal = document.getElementById('categoryModal');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function(e) {
+                    var btn = e.relatedTarget;
+                    var form = document.getElementById('categoryForm');
+                    var title = document.getElementById('categoryModalTitle');
+                    if (btn && btn.getAttribute('data-id')) {
+                        var id = btn.getAttribute('data-id');
+                        form.action = form.getAttribute('data-edit-url-base') + id;
+                        title.textContent = 'Chỉnh sửa danh mục';
+                        document.getElementById('catName').value = btn.getAttribute('data-name') || '';
+                        document.getElementById('catIcon').value = btn.getAttribute('data-icon') || '';
+                    } else {
+                        form.action = form.getAttribute('data-add-url') || '';
+                        title.textContent = 'Thêm danh mục';
+                        document.getElementById('catName').value = '';
+                        document.getElementById('catIcon').value = '';
+                    }
+                });
+            }
+        });
+        </script>
+    </div>
+</body>
+</html>

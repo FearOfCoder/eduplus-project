@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+    <!-- Sidebar Admin: menu dọc, nền tối, full chiều cao -->
+    <div th:fragment="sidebar" class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark h-100" style="min-height: 100%;">
+        <a th:href="@{/admin/dashboard}" class="d-flex align-items-center mb-4 text-decoration-none px-2 pt-2">
+            <img th:src="${siteLogo}" alt="EduPlus" style="height: 50px; width: auto; object-fit: contain;" class="me-2 bg-white rounded-3 p-1">
+            <span class="fs-4 fw-bold text-white" style="letter-spacing: -0.5px;">EduPlus</span>
+        </a>
+        <div class="mb-3">
+            <span class="small fw-semibold text-white-50 d-block">ADMIN</span>
+        </div>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item"><a class="nav-link text-white" th:href="@{/admin/dashboard}"><i class="fas fa-wallet me-2"></i>Tài chính</a></li>
+            <li class="nav-item"><a class="nav-link text-white d-flex align-items-center" th:href="@{/admin/users}"><i class="fas fa-users me-2"></i>Quản lý Người dùng<span th:if="${pendingTeacherCount != null and pendingTeacherCount > 0}" class="badge bg-danger rounded-pill ms-auto" th:text="${pendingTeacherCount}"></span></a></li>
+            <li class="nav-item"><a class="nav-link text-white d-flex align-items-center" th:href="@{/admin/courses}"><i class="fas fa-check-circle me-2"></i>Duyệt Khóa học<span th:if="${pendingCourseCount != null and pendingCourseCount > 0}" class="badge bg-danger rounded-pill ms-auto" th:text="${pendingCourseCount}"></span></a></li>
+            <li class="nav-item"><a class="nav-link text-white" th:href="@{/admin/categories}"><i class="fas fa-list me-2"></i>Danh mục</a></li>
+            <li class="nav-item"><a class="nav-link text-white" th:href="@{/admin/faq}"><i class="fas fa-life-ring me-2"></i>Quản lý Trợ giúp</a></li>
+            <li class="nav-item"><a class="nav-link text-white" th:href="@{/admin/settings}"><i class="fas fa-cogs me-2"></i>Hệ thống</a></li>
+        </ul>
+    </div>
+    <!-- Chỉ nội dung menu (dùng trong dashboard-layout) -->
+    <th:block th:fragment="sidebar-content">
+        <li class="nav-item"><a class="nav-link text-white py-2 px-3 rounded-3" th:href="@{/admin/dashboard}"><i class="fas fa-wallet me-2"></i>Tài chính</a></li>
+        <li class="nav-item"><a class="nav-link text-white py-2 px-3 rounded-3 d-flex align-items-center" th:href="@{/admin/users}"><i class="fas fa-users me-2"></i>Quản lý Người dùng<span th:if="${pendingTeacherCount != null and pendingTeacherCount > 0}" class="badge bg-danger rounded-pill ms-auto" th:text="${pendingTeacherCount}"></span></a></li>
+        <li class="nav-item"><a class="nav-link text-white py-2 px-3 rounded-3 d-flex align-items-center" th:href="@{/admin/courses}"><i class="fas fa-check-circle me-2"></i>Duyệt Khóa học<span th:if="${pendingCourseCount != null and pendingCourseCount > 0}" class="badge bg-danger rounded-pill ms-auto" th:text="${pendingCourseCount}"></span></a></li>
+        <li class="nav-item"><a class="nav-link text-white py-2 px-3 rounded-3" th:href="@{/admin/categories}"><i class="fas fa-list me-2"></i>Danh mục</a></li>
+        <li class="nav-item"><a class="nav-link text-white py-2 px-3 rounded-3" th:href="@{/admin/faq}"><i class="fas fa-life-ring me-2"></i>Quản lý Trợ giúp</a></li>
+        <li class="nav-item"><a class="nav-link text-white py-2 px-3 rounded-3" th:href="@{/admin/settings}"><i class="fas fa-cogs me-2"></i>Hệ thống</a></li>
+    </th:block>
+</body>
+</html>

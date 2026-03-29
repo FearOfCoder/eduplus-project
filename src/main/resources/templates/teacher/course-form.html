@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout(${mode == 'create' ? 'Tạo khóa học mới' : 'Chỉnh sửa khóa học'}, ~{::content})}">
+<body>
+    <div th:fragment="content">
+    <style>.terms-box { height: 200px; overflow-y: scroll; border: 1px solid #ccc; padding: 15px; background: #f9f9f9; border-radius: 4px; white-space: pre-wrap; font-size: 0.9em; line-height: 1.6; }</style>
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4" th:text="${mode == 'create'} ? 'Tạo khóa học mới' : 'Chỉnh sửa khóa học'">Khóa học</h1>
+        <div>
+            <a th:href="@{/teacher/courses}" class="btn btn-outline-secondary btn-sm">Danh sách khóa học</a>
+        </div>
+    </div>
+
+    <form th:object="${course}"
+          id="courseForm"
+          th:action="${mode == 'create'} ? @{/teacher/courses} : @{|/teacher/courses/${course.id}|}"
+          method="post"
+          enctype="multipart/form-data"
+          class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Tiêu đề khóa học</label>
+                <input type="text" th:field="*{title}" class="form-control" placeholder="Ví dụ: Lập trình Java cơ bản">
+                <div class="text-danger small" th:if="${#fields.hasErrors('title')}"
+                     th:errors="*{title}">Lỗi</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Mô tả</label>
+                <textarea th:field="*{description}" class="form-control" rows="4"
+                          placeholder="Mô tả chi tiết nội dung khóa học"></textarea>
+                <div class="text-danger small" th:if="${#fields.hasErrors('description')}"
+                     th:errors="*{description}">Lỗi</div>
+            </div>
+
+            <div class="mb-4">
+                <label for="courseImage" class="form-label fw-bold">Hình ảnh khóa học</label>
+                <input class="form-control" type="file" id="courseImage" name="image" accept="image/png, image/jpeg, image/jpg">
+                <div class="form-text text-muted">
+                    <i class="fas fa-magic me-1"></i> Tải lên hình ảnh nổi bật giúp thu hút học viên và tăng tỷ lệ đăng ký. (Không bắt buộc)
+                </div>
+                <div th:if="${course.imageUrl != null}" class="mt-2">
+                    <img th:src="@{${course.imageUrl}}" class="img-thumbnail" style="max-height: 150px;" alt="Ảnh khóa học hiện tại">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Thể loại (Danh mục) <span class="text-danger">*</span></label>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Chọn lĩnh vực</label>
+                        <select id="parentCategory" class="form-select" autocomplete="off">
+                            <option value="">-- Chọn lĩnh vực --</option>
+                            <option th:each="root : ${rootCategories}"
+                                    th:value="${root.id}"
+                                    th:text="${root.name}">Cha</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Chọn chuyên môn</label>
+                        <select id="childCategory" class="form-select" disabled autocomplete="off">
+                            <option value="">-- Chọn chuyên môn --</option>
+                        </select>
+                    </div>
+                </div>
+                <input type="hidden" name="categoryId" id="categoryId" value="">
+                <div class="form-text">Chọn lĩnh vực trước, sau đó chọn chuyên môn cụ thể.</div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Giá (VND)</label>
+                    <input type="number" th:field="*{price}" min="0" step="1000" class="form-control">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('price')}"
+                         th:errors="*{price}">Lỗi</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Phí nền tảng</label>
+                    <div class="form-control-plaintext bg-light p-2 rounded">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        <strong>Phí nền tảng hiện tại: <span th:text="${platformFeePercent != null ? platformFeePercent : 20}">20</span>%</strong>
+                    </div>
+                    <div class="form-text">Phí này được cấu hình bởi Admin và áp dụng cho tất cả khóa học.</div>
+                    <!-- Hidden field để giữ giá trị (không cho user chỉnh sửa) -->
+                    <input type="hidden" th:field="*{platformFeePercent}" th:value="${platformFeePercent != null ? platformFeePercent : 20}">
+                </div>
+            </div>
+
+            <!-- Khu vực Điều khoản và Cam kết (chỉ hiện khi tạo mới) -->
+            <div th:if="${mode == 'create'}" class="mb-4">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning bg-opacity-10">
+                        <strong><i class="fas fa-file-contract"></i> Điều khoản và Cam kết</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Điều khoản cho Giảng viên</label>
+                            <div class="terms-box" th:text="${teacherTerms != null ? teacherTerms : 'Đang tải...'}">
+                                1. Phí nền tảng là 20% doanh thu.
+                                2. Giảng viên cam kết nội dung không vi phạm bản quyền.
+                                3. Nghiêm cấm nội dung chống phá nhà nước hoặc vi phạm pháp luật.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="agreeTerms" 
+                                       id="agreeTerms" 
+                                       required>
+                                <label class="form-check-label" for="agreeTerms">
+                                    <strong>Tôi đã đọc và đồng ý với các điều khoản trên</strong>
+                                </label>
+                            </div>
+                            <div th:if="${termsError != null}" class="text-danger small mt-1" th:text="${termsError}">
+                                Bạn phải đồng ý với điều khoản
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Lời nói đầu (chỉ hiện khi tạo mới) -->
+            <div th:if="${mode == 'create'}" class="mb-3">
+                <label class="form-label">
+                    Lời nói đầu (Gửi Admin duyệt) <span class="text-danger">*</span>
+                </label>
+                <textarea name="preface" 
+                          class="form-control" 
+                          rows="4"
+                          placeholder="Vui lòng mô tả lý do tạo khóa học này, mục tiêu học tập, đối tượng học viên..."
+                          th:text="${preface != null ? preface : ''}"
+                          required></textarea>
+                <div class="form-text">
+                    Nội dung này sẽ được gửi đến Admin để xem xét và duyệt khóa học của bạn.
+                </div>
+                <div th:if="${#fields.hasErrors('preface')}" class="text-danger small" th:errors="*{preface}">
+                    Lỗi
+                </div>
+            </div>
+
+            <div class="mb-3" th:if="${mode == 'edit'}">
+                <label class="form-label">Trạng thái hiện tại</label>
+                <p class="form-control-plaintext fw-bold" th:text="${course.status}">DRAFT</p>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a th:href="@{/teacher/courses}" class="btn btn-outline-secondary">Hủy</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Lưu
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script th:inline="javascript">
+(function() {
+    var parentSelect = document.getElementById('parentCategory');
+    var childSelect = document.getElementById('childCategory');
+    var categoryIdHidden = document.getElementById('categoryId');
+    var initialParentId = /*[[${course.category != null && course.category.parent != null ? course.category.parent.id : null}]]*/ null;
+    var initialCategoryId = /*[[${course.category != null ? course.category.id : null}]]*/ null;
+    var isCreateMode = /*[[${mode == 'create'}]]*/ false;
+
+    function loadChildren(parentId) {
+        childSelect.innerHTML = '<option value="">-- Chọn chuyên môn --</option>';
+        categoryIdHidden.value = '';
+        childSelect.disabled = true;
+        if (!parentId) return;
+
+        fetch('/api/categories/' + parentId + '/children')
+            .then(function(r) { return r.json(); })
+            .then(function(items) {
+                childSelect.disabled = false;
+                items.forEach(function(item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = item.name;
+                    childSelect.appendChild(opt);
+                });
+                if (initialCategoryId && initialParentId == parentId) {
+                    childSelect.value = initialCategoryId;
+                    categoryIdHidden.value = initialCategoryId;
+                    initialCategoryId = null;
+                }
+            })
+            .catch(function() {
+                childSelect.disabled = false;
+            });
+    }
+
+    parentSelect.addEventListener('change', function() {
+        var pid = this.value || null;
+        loadChildren(pid);
+    });
+
+    childSelect.addEventListener('change', function() {
+        categoryIdHidden.value = this.value || '';
+    });
+
+    if (initialParentId) {
+        parentSelect.value = initialParentId;
+        loadChildren(initialParentId);
+    }
+
+    document.getElementById('courseForm').addEventListener('submit', function(e) {
+        if (isCreateMode && !categoryIdHidden.value) {
+            e.preventDefault();
+            alert('Vui lòng chọn lĩnh vực và chuyên môn (danh mục).');
+            return false;
+        }
+    });
+})();
+</script>
+    </div>
+</body>
+</html>
+

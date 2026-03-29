@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout(${mode == 'create' ? 'Tạo bài học' : 'Chỉnh sửa bài học'}, ~{::content})}">
+<body>
+    <div th:fragment="content">
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-1" th:text="${mode == 'create'} ? 'Tạo bài học mới' : 'Chỉnh sửa bài học'">Bài học</h1>
+            <p class="mb-0 text-muted" th:text="${course != null and course.title != null ? course.title : 'Khóa học'}">Tên khóa học</p>
+        </div>
+        <div>
+            <a th:if="${course != null and course.id != null}" 
+               th:href="@{|/teacher/courses/${course.id}/lessons|}" 
+               class="btn btn-outline-secondary btn-sm">
+                Danh sách bài học
+            </a>
+            <a th:href="@{/logout}" class="btn btn-danger btn-sm">Đăng xuất</a>
+        </div>
+    </div>
+
+    <form th:object="${lesson}"
+          th:action="${mode == 'create' and course != null and course.id != null} ? 
+                     @{|/teacher/courses/${course.id}/lessons|} :
+                     (${mode == 'edit' and lesson != null and lesson.id != null} ? @{|/teacher/lessons/${lesson.id}|} : '#')"
+          method="post"
+          enctype="multipart/form-data"
+          class="card shadow-sm border-0">
+        <div class="card-body">
+            <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger">
+                <strong>Vui lòng sửa các lỗi sau:</strong>
+                <ul class="mb-0">
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}">Lỗi</li>
+                </ul>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Tiêu đề bài học <span class="text-danger">*</span></label>
+                <input type="text" th:field="*{title}" class="form-control"
+                       placeholder="Ví dụ: Bài 1 - Giới thiệu Java" required>
+                <div class="text-danger small" th:if="${#fields.hasErrors('title')}"
+                     th:errors="*{title}">Lỗi</div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Loại bài học <span class="text-danger">*</span></label>
+                    <select th:field="*{type}" class="form-select" required>
+                        <option value="">-- Chọn loại bài học --</option>
+                        <option value="VIDEO">VIDEO</option>
+                        <option value="DOCUMENT">DOCUMENT</option>
+                        <option value="ASSIGNMENT">ASSIGNMENT</option>
+                    </select>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('type')}"
+                         th:errors="*{type}">Lỗi</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Thứ tự</label>
+                    <input type="number" th:field="*{sortOrder}" min="1" class="form-control">
+                    <div class="form-text">Số thứ tự để sắp xếp bài học (1, 2, 3...)</div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Nội dung / Mô tả</label>
+                <textarea th:field="*{content}" class="form-control" rows="4"
+                          placeholder="Mô tả nội dung bài học, ghi chú..."></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Upload tài liệu/Video (tùy chọn)</label>
+                <input type="file" name="file" id="file" class="form-control" accept="video/*,application/pdf,.doc,.docx,.ppt,.pptx">
+                <div class="form-text">Chọn file video hoặc tài liệu từ máy tính (tối đa 500MB). File sẽ được lưu tự động.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Hoặc nhập URL tài nguyên (tùy chọn)</label>
+                <input type="text" th:field="*{resourceUrl}" class="form-control"
+                       placeholder="Link video YouTube, Google Drive, hoặc URL khác...">
+                <div class="form-text">Nếu bạn không upload file, có thể nhập URL trực tiếp.</div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a th:if="${course != null and course.id != null}" 
+                   th:href="@{|/teacher/courses/${course.id}/lessons|}" 
+                   class="btn btn-outline-secondary">Hủy</a>
+                <a th:if="${course == null or course.id == null}" 
+                   th:href="@{/teacher/courses}" 
+                   class="btn btn-outline-secondary">Hủy</a>
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+        </div>
+    </form>
+</div>
+    </div>
+</body>
+</html>

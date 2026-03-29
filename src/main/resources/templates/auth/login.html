@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng nhập - EduPlus</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        /* 1. Panel trái: ảnh nền + gradient Indigo–Pink + sóng SVG */
+        .auth-left-panel {
+            position: relative;
+            width: 45%;
+            min-height: 100vh;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.85) 0%, rgba(236, 72, 153, 0.85) 100%),
+                        url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1471&auto=format&fit=crop') center/cover no-repeat;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 2rem 5rem 2rem 2rem;
+            color: #fff;
+        }
+        .auth-left-panel::after {
+            content: '';
+            position: absolute;
+            top: 0; right: -1px; bottom: 0;
+            width: 150px;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 1080' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M200,0 L200,1080 L0,1080 C50,900 150,700 50,540 C-50,380 150,180 0,0 Z' fill='%23ffffff'/%3E%3C/svg%3E");
+            background-size: 100% 100%;
+            z-index: 2;
+        }
+        .auth-left-panel .brand-inner { position: relative; z-index: 1; text-align: left; max-width: 360px; }
+        .auth-left-panel .brand-logo { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; letter-spacing: -0.5px; }
+        .auth-left-panel .brand-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; line-height: 1.3; }
+        .auth-left-panel .brand-sub { font-size: 0.95rem; opacity: 0.95; line-height: 1.5; }
+        .auth-text-wrapper .brand-logo,
+        .auth-text-wrapper .brand-title,
+        .auth-text-wrapper .brand-sub,
+        .auth-text-wrapper h1,
+        .auth-text-wrapper h2,
+        .auth-text-wrapper p { text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+        .auth-wrap { min-height: 100vh; display: flex; flex-wrap: nowrap; }
+        .auth-right-panel {
+            width: 55%;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .auth-form-card { max-width: 450px; }
+        .auth-form-box { width: 100%; }
+        .auth-form-box .form-title { font-size: 1.6rem; font-weight: 700; color: #2D3436; margin-bottom: 0.5rem; }
+        .auth-form-box .form-sub { font-size: 0.9rem; color: #636e72; margin-bottom: 1.5rem; }
+        .auth-form-box .form-group { margin-bottom: 1.25rem; background: none !important; }
+        .auth-form-box .auth-switch { margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: #636e72; }
+        .auth-form-box .auth-switch a { color: var(--brand-primary); font-weight: 600; text-decoration: none; }
+        .auth-form-box .auth-switch a:hover { text-decoration: underline; }
+        .auth-form-box label { font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 0.25rem; }
+
+        /* 2. Ép buộc Input trong suốt & có hiệu ứng mượt */
+        .minimal-input {
+            background-color: transparent !important;
+            border: none !important;
+            border-bottom: 2px solid #e2e8f0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 12px 0 !important;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .minimal-input:focus {
+            border-bottom-color: var(--brand-primary) !important;
+            background-color: transparent !important;
+            outline: none !important;
+        }
+
+        /* 3. Nút bấm gradient + hover phát sáng hồng tím */
+        .btn-auth {
+            background: var(--gradient-brand);
+            border: none;
+            border-radius: 50px !important;
+            padding: 12px 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        }
+        .btn-auth:hover {
+            filter: brightness(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(236, 72, 153, 0.45);
+        }
+
+        /* 4. Animation load trang mượt mà */
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal .minimal-input { background-color: transparent !important; border: none !important; border-bottom: 2px solid #e2e8f0 !important; border-radius: 0 !important; box-shadow: none !important; }
+        .modal .minimal-input:focus { border-bottom-color: var(--brand-primary) !important; outline: none !important; }
+        .modal .btn-auth { width: auto; }
+
+        @media (max-width: 991.98px) {
+            .auth-left-panel { display: none !important; }
+            .auth-right-panel { width: 100%; padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrap">
+        <!-- Panel Trái: ảnh nền + gradient + sóng SVG -->
+        <div class="auth-left-panel d-none d-lg-flex">
+            <div class="brand-inner auth-text-wrapper">
+                <div class="brand-logo">EduPlus</div>
+                <h2 class="brand-title">Chào mừng đến với EduPlus</h2>
+                <p class="brand-sub mb-0">Nền tảng học tập trực tuyến hàng đầu. Khám phá hàng ngàn khóa học ngay hôm nay.</p>
+            </div>
+        </div>
+        <!-- Panel Phải: nền xám nhạt + card form nổi -->
+        <div class="auth-right-panel">
+            <div class="auth-form-card bg-white p-4 p-md-5 rounded-4 shadow-sm w-100">
+                <div class="auth-form-box">
+                <h1 class="form-title">Đăng nhập tài khoản</h1>
+                <p class="form-sub">Chào mừng bạn quay lại. Vui lòng nhập thông tin.</p>
+
+                <div th:if="${param.error != null and param.error[0] == 'unverified'}" class="alert alert-warning py-2" role="alert">
+                    <i class="fas fa-envelope me-2"></i>Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email để xác thực!
+                    <a href="#" class="alert-link fw-bold text-decoration-underline" data-bs-toggle="modal" data-bs-target="#resendEmailModal">Gửi lại ngay</a>
+                </div>
+                <div th:if="${param.error != null and param.error[0] == 'pending'}" class="alert alert-info py-2" role="alert">
+                    <i class="fas fa-user-clock me-2"></i>Tài khoản đang chờ Admin xét duyệt hoặc đã bị khóa. Vui lòng liên hệ quản trị viên.
+                </div>
+                <div th:if="${param.error != null and param.error[0] == 'locked'}" class="alert alert-danger rounded-3 p-3 mb-4 text-center" style="font-size: 0.9rem;" role="alert">
+                    <i class="fas fa-ban me-2"></i> <strong>Tài khoản của bạn đang bị cấm hoạt động.</strong> Vui lòng liên hệ Admin.
+                </div>
+                <div th:if="${param.error != null and param.error[0] == 'bad_credentials'}" class="alert alert-danger py-2" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> Sai tên đăng nhập hoặc mật khẩu.
+                </div>
+                <div th:if="${param.registered}" class="alert alert-success py-2">Đăng ký thành công. Vui lòng kiểm tra email và xác thực tài khoản trước khi đăng nhập.</div>
+                <div th:if="${param.verified}" class="alert alert-success py-2">Xác thực email thành công! Bạn có thể đăng nhập ngay.</div>
+                <div th:if="${param.error != null and param.error[0] == 'invalid_code'}" class="alert alert-danger py-2" role="alert">Mã xác thực không hợp lệ hoặc đã hết hạn.</div>
+                <div th:if="${param.resend_success}" class="alert alert-success py-2" role="alert"><i class="fas fa-check-circle me-2"></i>Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư.</div>
+                <div th:if="${param.resend_error}" class="alert alert-danger py-2" role="alert"><i class="fas fa-exclamation-circle me-2"></i>Email không tồn tại hoặc tài khoản đã được kích hoạt.</div>
+
+                <form method="post" th:action="@{/login}">
+                    <div class="fade-in-up">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" name="username" id="username" class="form-control minimal-input" placeholder="Nhập username" required>
+                        </div>
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="mb-0" for="password">Mật khẩu</label>
+                                <a href="#" class="small text-brand" style="font-weight: 600;" title="Tính năng sắp ra mắt">Quên mật khẩu?</a>
+                            </div>
+                            <input type="password" name="password" id="password" class="form-control minimal-input" placeholder="Nhập mật khẩu" required>
+                        </div>
+                        <button type="submit" class="btn btn-auth w-100 text-white py-3 mt-2">Đăng nhập</button>
+
+                        <div class="d-flex align-items-center my-4">
+                            <hr class="flex-grow-1 text-muted">
+                            <span class="mx-3 text-muted" style="font-size: 0.85rem; font-weight: 500;">Hoặc tiếp tục với</span>
+                            <hr class="flex-grow-1 text-muted">
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary w-100 rounded-pill d-flex align-items-center justify-content-center py-2">
+                                    <i class="fab fa-google text-danger me-2"></i> Google
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary w-100 rounded-pill d-flex align-items-center justify-content-center py-2">
+                                    <i class="fab fa-facebook-f text-primary me-2"></i> Facebook
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <p class="auth-switch mb-0">Chưa có tài khoản? <a th:href="@{/register}">Đăng ký ngay</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="modal fade" id="resendEmailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-header border-0"><h5 class="modal-title">Gửi lại Email xác thực</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <form th:action="@{/auth/resend-verification}" method="post">
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">Hệ thống sẽ gửi lại liên kết kích hoạt vào địa chỉ email dưới đây:</p>
+                        <div class="mb-3">
+                            <label class="form-label">Email đăng ký</label>
+                            <input type="email" class="form-control minimal-input" name="email" th:value="${param.email != null and !param.email.isEmpty() ? param.email[0] : ''}" required readonly>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-auth text-white">Gửi lại ngay</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

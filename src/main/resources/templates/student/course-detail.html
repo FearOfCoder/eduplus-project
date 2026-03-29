@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}" th:if="${_csrf != null}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" th:if="${_csrf != null}">
+    <title>Chi tiết khóa học - LMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .lesson-item, .assignment-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .lesson-item:hover, .assignment-item:hover {
+            background-color: #f8fafc !important;
+        }
+        .lesson-item.active, .assignment-item.active {
+            background-color: rgba(79, 70, 229, 0.05) !important;
+            font-weight: 600;
+        }
+        .lesson-item.active .lesson-icon, .assignment-item.active .assignment-icon {
+            color: var(--brand-primary) !important;
+        }
+        .content-area {
+            min-height: 400px;
+        }
+        .lesson-completed {
+            color: var(--accent-teal);
+        }
+        .playlist-scroll {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .playlist-scroll::-webkit-scrollbar { width: 6px; }
+        .playlist-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .playlist-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .playlist-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .progress-bar-edup { background-color: var(--accent-teal); }
+        /* --- Hỏi đáp với AI: FAB & Chatbox --- */
+        .chat-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--gradient-brand);
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 14px rgba(102, 126, 234, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 1000;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .chat-fab:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+        }
+        .chat-box {
+            position: fixed;
+            bottom: 90px;
+            right: 24px;
+            width: 380px;
+            max-width: calc(100vw - 48px);
+            height: 480px;
+            max-height: calc(100vh - 140px);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+        .chat-box.hidden {
+            display: none !important;
+        }
+        .chat-box .chat-header {
+            background: var(--gradient-brand);
+            color: #fff;
+            padding: 14px 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .chat-box .chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background: #f8f9fa;
+        }
+        .chat-msg {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .chat-msg.user {
+            margin-left: auto;
+            background: var(--gradient-brand);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-msg.ai {
+            margin-right: auto;
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-msg.typing {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .chat-box .chat-footer {
+            padding: 12px;
+            background: #fff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .chat-box .chat-footer input {
+            flex: 1;
+            border-radius: 24px;
+            border: 1px solid #dee2e6;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+        }
+        .chat-box .chat-footer input:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+        .chat-box .chat-footer button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--gradient-brand);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-box .chat-footer button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container py-4">
+    <div class="mb-3" th:if="${enrollment == null}">
+        <a th:href="@{/courses}" class="btn btn-outline-secondary btn-sm">&larr; Quay lại danh sách</a>
+    </div>
+
+    <!-- Trang giới thiệu (khi chưa mua) -->
+    <div th:if="${enrollment == null}" class="card shadow-sm border-0">
+        <div class="card-body">
+            <h1 class="h4 mb-2" th:text="${course.title}">Tên khóa học</h1>
+            <p class="text-muted" th:text="${course.description}">Mô tả khóa học</p>
+
+            <p class="fw-bold">
+                Giá: <span th:text="${#numbers.formatDecimal(course.price, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</span>
+            </p>
+
+            <div class="d-flex gap-2">
+                <a th:href="@{|/courses/${course.id}/purchase|}" class="btn btn-success">
+                    Mua khóa học
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Giao diện học tập (khi đã mua) - Immersive Learning -->
+    <div th:if="${enrollment != null}">
+        <!-- Thông báo hoàn thành khóa học -->
+        <div th:if="${param.completed != null && param.completed[0] == 'true'}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading"><i class="fas fa-trophy"></i> Chúc mừng!</h5>
+            <p class="mb-0">Bạn đã hoàn thành tất cả các bài học trong khóa học này.</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Sleek Topbar: Quay lại + Tên khóa học + Tiến độ -->
+        <div class="bg-white shadow-sm d-flex align-items-center justify-content-between p-3 mb-4 rounded-4">
+            <div class="d-flex align-items-center">
+                <a th:href="@{/student/my-courses}" class="btn btn-light btn-sm rounded-pill"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
+                <h5 class="fw-bold mb-0 ms-3" th:text="${course.title}">Tên khóa học</h5>
+            </div>
+                <div class="d-flex align-items-center gap-3">
+                <span class="text-muted small">Tiến độ:</span>
+                <div class="d-flex align-items-center" style="min-width: 140px;">
+                    <div class="progress flex-grow-1" style="height: 8px; background: #e2e8f0;">
+                        <div class="progress-bar progress-bar-edup" role="progressbar"
+                             th:style="'width: ' + (progressPercentage != null ? progressPercentage : enrollment.progressPercent) + '%'"
+                             th:attr="aria-valuenow=${progressPercentage != null ? progressPercentage : enrollment.progressPercent}"
+                             aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <span class="small fw-bold ms-2 text-price" style="min-width: 2.5rem;"
+                          th:text="${(progressPercentage != null ? progressPercentage : enrollment.progressPercent) + '%'}">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theater Mode: Cột trái = Nội dung, Cột phải = Playlist -->
+        <div class="row g-4">
+            <!-- CỘT TRÁI: Khu vực nội dung bài học / bài tập -->
+            <div class="col-xl-8 col-lg-7">
+                <div class="card bg-white rounded-4 shadow-sm border-0 overflow-hidden content-area">
+                    <div class="card-body p-0">
+                        <!-- Hiển thị Lesson -->
+                        <div th:if="${param.lessonId != null && currentLesson != null}" class="p-4 p-md-5">
+                            <h3 class="h5 mb-3 fw-bold" th:text="${currentLesson.title}">Tên bài học</h3>
+                            
+                            <div th:if="${currentLesson.content != null && !currentLesson.content.isEmpty()}" class="mb-3">
+                                <p class="text-muted mb-0" th:text="${currentLesson.content}">Nội dung bài học...</p>
+                            </div>
+
+                            <!-- Video hoặc tài liệu -->
+                            <div th:if="${currentLesson.resourceUrl != null && !currentLesson.resourceUrl.isEmpty()}" class="mb-4">
+                                <!-- Kiểm tra nếu là video file (.mp4, .webm) -->
+                                <div th:if="${#strings.containsIgnoreCase(currentLesson.resourceUrl, '.mp4') or #strings.containsIgnoreCase(currentLesson.resourceUrl, '.webm')}"
+                                     class="ratio ratio-16x9 rounded-3 overflow-hidden mb-3">
+                                    <video controls class="w-100 h-100" style="object-fit: contain;">
+                                        <source th:src="${currentLesson.resourceUrl}" 
+                                                th:attr="type=${#strings.containsIgnoreCase(currentLesson.resourceUrl, '.mp4') ? 'video/mp4' : 'video/webm'}">
+                                        Trình duyệt của bạn không hỗ trợ thẻ video.
+                                    </video>
+                                </div>
+                                
+                                <!-- Kiểm tra nếu là video nhúng (YouTube, Vimeo, etc.) -->
+                                <div th:if="${(#strings.contains(currentLesson.resourceUrl, 'youtube.com') or #strings.contains(currentLesson.resourceUrl, 'youtu.be') or #strings.contains(currentLesson.resourceUrl, 'vimeo.com')) and not (#strings.containsIgnoreCase(currentLesson.resourceUrl, '.mp4') or #strings.containsIgnoreCase(currentLesson.resourceUrl, '.webm'))}"
+                                     class="ratio ratio-16x9 rounded-3 overflow-hidden mb-3">
+                                    <iframe th:src="${currentLesson.resourceUrl}" 
+                                            allowfullscreen 
+                                            frameborder="0">
+                                    </iframe>
+                                </div>
+                                
+                                <!-- Nếu là tài liệu khác (không phải video), hiển thị nút tải -->
+                                <div th:if="${not (#strings.containsIgnoreCase(currentLesson.resourceUrl, '.mp4') or #strings.containsIgnoreCase(currentLesson.resourceUrl, '.webm')) and not (#strings.contains(currentLesson.resourceUrl, 'youtube.com') or #strings.contains(currentLesson.resourceUrl, 'youtu.be') or #strings.contains(currentLesson.resourceUrl, 'vimeo.com'))}"
+                                     class="mb-3">
+                                    <a th:href="${currentLesson.resourceUrl}" 
+                                       target="_blank" 
+                                       class="btn btn-outline-secondary rounded-pill">
+                                        <i class="fas fa-download me-2"></i> Tải tài liệu
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div th:if="${currentLesson.resourceUrl == null || currentLesson.resourceUrl.isEmpty()}" class="alert alert-light border mb-4">
+                                <p class="mb-0 text-muted">Bài học này chưa có video hoặc tài liệu.</p>
+                            </div>
+
+                            <!-- Nút điều hướng -->
+                            <div class="d-flex gap-2 mt-4">
+                                <!-- Nếu bài chưa hoàn thành -->
+                                <form th:if="${currentLessonCompleted == null || currentLessonCompleted == false}"
+                                      th:action="@{|/student/course/${course.id}/lesson/${currentLesson.id}/complete|}"
+                                      method="post"
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-check"></i> Hoàn thành & Bài tiếp theo
+                                    </button>
+                                </form>
+
+                                <!-- Nếu bài đã hoàn thành -->
+                                <div th:if="${currentLessonCompleted != null && currentLessonCompleted == true}">
+                                    <button type="button" class="btn btn-success" disabled>
+                                        <i class="fas fa-check-circle"></i> Đã hoàn thành
+                                    </button>
+                                    <!-- Nút bài tiếp theo -->
+                                    <a th:if="${nextLessonId != null}"
+                                       th:href="@{|/student/course/${course.id}?lessonId=${nextLessonId}|}"
+                                       class="btn btn-primary ms-2">
+                                        Bài tiếp theo <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hiển thị Assignment -->
+                        <div th:if="${param.assignmentId != null && !#lists.isEmpty(assignments)}" class="p-4 p-md-5">
+                            <div th:each="assignment : ${assignments}" th:if="${param.assignmentId[0] == assignment.id.toString()}">
+                                <h3 class="h5 mb-3 fw-bold" th:text="${assignment.title}">Tên bài tập</h3>
+                                <div class="mb-4">
+                                    <p th:text="${assignment.description}">Mô tả bài tập...</p>
+                                    <p class="mb-0" th:if="${assignment.dueDate != null}">
+                                        <strong>Hạn nộp:</strong>
+                                        <span th:text="${#temporals.format(assignment.dueDate, 'dd/MM/yyyy HH:mm')}">01/01/2026 12:00</span>
+                                    </p>
+                                </div>
+                                
+                                <!-- Lấy submission tương ứng -->
+                                <th:block th:with="submission=${submissionMap != null ? submissionMap.get(assignment.id) : null}">
+                                    <!-- Trường hợp 1: Chưa nộp -->
+                                    <div th:if="${submission == null}" class="d-grid gap-2">
+                                        <a th:href="@{|/student/assignments/${assignment.id}|}" class="btn btn-primary">
+                                            <i class="fas fa-edit"></i> Làm bài tập
+                                        </a>
+                                    </div>
+                                    
+                                    <!-- Trường hợp 2: Đã nộp nhưng chưa có điểm -->
+                                    <div th:if="${submission != null && submission.grade == null}" class="d-grid gap-2">
+                                        <button type="button" class="btn btn-warning" disabled>
+                                            <i class="fas fa-clock"></i> Đã nộp - Chờ chấm
+                                        </button>
+                                        <a th:href="@{|/student/assignments/${assignment.id}|}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-eye"></i> Xem lại bài làm
+                                        </a>
+                                    </div>
+                                    
+                                    <!-- Trường hợp 3: Đã có điểm -->
+                                    <div th:if="${submission != null && submission.grade != null}" class="d-grid gap-2">
+                                        <button type="button" class="btn btn-success" disabled>
+                                            <i class="fas fa-check-circle"></i> Điểm: <strong th:text="${#numbers.formatDecimal(submission.grade, 1, 1)}">0.0</strong>
+                                        </button>
+                                        <a th:href="@{|/student/assignments/${assignment.id}|}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> Xem chi tiết bài làm
+                                        </a>
+                                    </div>
+                                </th:block>
+                            </div>
+                        </div>
+
+                        <!-- Mặc định: Chào mừng - chọn bài từ playlist bên phải -->
+                        <div th:if="${param.lessonId == null && param.assignmentId == null}">
+                            <div class="text-center p-4 p-md-5">
+                                <div class="py-5">
+                                    <h5 class="fw-bold mb-3" style="color: var(--text-main);">Chào mừng đến với khóa học!</h5>
+                                    <p class="text-muted mb-0" style="font-size: 1.05rem;">Hãy chọn một bài học hoặc bài tập từ danh sách bên phải để bắt đầu.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CỘT PHẢI: Danh sách bài học (Playlist) -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="card bg-white rounded-4 shadow-sm border-0 h-100">
+                    <div class="card-header border-0 border-bottom bg-transparent p-3">
+                        <h6 class="fw-bold mb-0">Nội dung khóa học</h6>
+                    </div>
+                    <div class="playlist-scroll">
+                        <!-- Danh sách Bài học -->
+                        <div class="p-3 border-bottom" style="background: #f8fafc;">
+                            <span class="small fw-bold text-muted"><i class="fas fa-play-circle me-2"></i>Bài học</span>
+                        </div>
+                        <div th:if="${#lists.isEmpty(lessons)}" class="p-3 text-muted small">
+                            Chưa có bài học nào
+                        </div>
+                        <a th:each="lesson, iterStat : ${lessons}" 
+                           th:href="@{|/student/course/${course.id}?lessonId=${lesson.id}|}"
+                           class="lesson-item p-3 border-bottom d-flex align-items-start gap-2"
+                           th:classappend="${param.lessonId != null && param.lessonId[0] == lesson.id.toString() ? 'active' : ''}">
+                            <i class="fas fa-play-circle lesson-icon text-muted mt-1" style="font-size: 0.85rem;"></i>
+                            <div class="flex-grow-1 min-w-0">
+                                <span class="d-block" th:text="${lesson.title}">Tên bài học</span>
+                                <small class="text-muted" th:text="${#strings.abbreviate(lesson.content, 40)}">Mô tả...</small>
+                                <span class="d-inline-block ms-1">
+                                    <i th:if="${lessonCompletedMap != null && lessonCompletedMap.get(lesson.id) == true}"
+                                       class="fas fa-check-circle lesson-completed small"></i>
+                                </span>
+                            </div>
+                            <span class="badge bg-light text-dark ms-2" th:text="${iterStat.count}">1</span>
+                        </a>
+
+                        <!-- Danh sách Bài tập -->
+                        <div class="p-3 border-bottom mt-1" style="background: #f8fafc;">
+                            <span class="small fw-bold text-muted"><i class="fas fa-file-alt me-2"></i>Bài tập</span>
+                        </div>
+                        <div th:if="${#lists.isEmpty(assignments)}" class="p-3 text-muted small">
+                            Chưa có bài tập nào
+                        </div>
+                        <a th:each="assignment, iterStat : ${assignments}" 
+                           th:href="@{|/student/course/${course.id}?assignmentId=${assignment.id}|}"
+                           class="assignment-item p-3 border-bottom d-flex align-items-start gap-2"
+                           th:classappend="${param.assignmentId != null && param.assignmentId[0] == assignment.id.toString() ? 'active' : ''}">
+                            <i class="fas fa-file-alt assignment-icon text-muted mt-1" style="font-size: 0.85rem;"></i>
+                            <div class="flex-grow-1 min-w-0">
+                                <span class="d-block" th:text="${assignment.title}">Tên bài tập</span>
+                                <small class="text-muted" th:if="${assignment.dueDate != null}"
+                                       th:text="'Hạn: ' + ${#temporals.format(assignment.dueDate, 'dd/MM/yyyy')}">Hạn</small>
+                                <span class="d-inline-block ms-1">
+                                    <th:block th:with="submission=${submissionMap != null ? submissionMap.get(assignment.id) : null}">
+                                        <i th:if="${submission != null && submission.grade == null}"
+                                           class="fas fa-hourglass-half text-warning small" title="Đang chờ chấm"></i>
+                                        <i th:if="${submission != null && submission.grade != null}"
+                                           class="fas fa-check-circle text-success small" title="Đã chấm điểm"></i>
+                                        <i th:if="${submission == null}"
+                                           class="fas fa-circle text-muted small" style="font-size: 0.5em;" title="Chưa nộp"></i>
+                                    </th:block>
+                                </span>
+                            </div>
+                            <span class="badge ms-2 small" style="background-color: rgba(245, 158, 11, 0.2); color: var(--text-main);">BT</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hỏi đáp với AI: FAB + Chatbox (chỉ khi đang xem một bài học) -->
+<div th:if="${enrollment != null && currentLesson != null}" id="lessonChatWidget">
+    <button type="button" class="chat-fab" id="chatFab" aria-label="Hỏi đáp với AI">
+        🤖
+    </button>
+    <div class="chat-box hidden" id="chatBox">
+        <div class="chat-header">Hỏi đáp về bài: <span id="chatLessonTitle" th:text="${currentLesson.title}">Bài học</span></div>
+        <div class="chat-body" id="chatBody">
+            <div class="chat-msg ai">Chào bạn! Hãy đặt câu hỏi về bài học này, tôi sẽ trả lời dựa trên nội dung bài học.</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chatInput" placeholder="Nhập câu hỏi của bạn..." autocomplete="off">
+            <button type="button" id="chatSend" aria-label="Gửi">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+<!-- Hỏi đáp với AI: Script -->
+<script th:if="${enrollment != null && currentLesson != null}" th:inline="javascript">
+(function() {
+    var lessonId = /*[[${currentLesson.id}]]*/ 0;
+    var chatFab = document.getElementById('chatFab');
+    var chatBox = document.getElementById('chatBox');
+    var chatBody = document.getElementById('chatBody');
+    var chatInput = document.getElementById('chatInput');
+    var chatSend = document.getElementById('chatSend');
+
+    if (!chatFab || !chatBox) return;
+
+    chatFab.addEventListener('click', function() {
+        chatBox.classList.toggle('hidden');
+        if (!chatBox.classList.contains('hidden')) {
+            chatInput.focus();
+        }
+    });
+
+    function appendMsg(text, isUser) {
+        var div = document.createElement('div');
+        div.className = 'chat-msg ' + (isUser ? 'user' : 'ai');
+        div.textContent = text;
+        chatBody.appendChild(div);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function removeTyping() {
+        var typing = chatBody.querySelector('.chat-msg.typing');
+        if (typing) typing.remove();
+    }
+
+    function sendQuestion() {
+        var question = (chatInput.value || '').trim();
+        if (!question) return;
+
+        chatInput.value = '';
+        appendMsg(question, true);
+
+        var typingDiv = document.createElement('div');
+        typingDiv.className = 'chat-msg ai typing';
+        typingDiv.textContent = 'AI đang gõ...';
+        chatBody.appendChild(typingDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        chatSend.disabled = true;
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]') && document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]') && document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+        var headers = { 'Content-Type': 'application/json' };
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+        fetch('/api/chat/lesson', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ lessonId: lessonId, question: question }),
+            credentials: 'same-origin'
+        })
+        .then(function(r) {
+            removeTyping();
+            if (!r.ok) return r.json().then(function(data) { throw new Error(data.error || 'Lỗi ' + r.status); });
+            return r.json();
+        })
+        .then(function(data) {
+            appendMsg(data.reply || 'Không có phản hồi.', false);
+        })
+        .catch(function(err) {
+            appendMsg('Lỗi: ' + (err.message || 'Không kết nối được.'), false);
+        })
+        .finally(function() {
+            chatSend.disabled = false;
+        });
+    }
+
+    chatSend.addEventListener('click', sendQuestion);
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); sendQuestion(); }
+    });
+})();
+</script>
+<script th:src="@{/js/notifications.js}"></script>
+</body>
+</html>

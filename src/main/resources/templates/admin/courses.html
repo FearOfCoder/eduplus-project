@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/dashboard-layout :: layout('Duyệt khóa học', ~{::content})}">
+<body>
+    <div th:fragment="content">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+        <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${successMsg}">Thành công</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${errorMsg}">Lỗi</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div class="filter-toolbar bg-white p-3 rounded-4 shadow-sm mb-4 d-flex flex-wrap gap-3 align-items-center justify-content-between border-0">
+            <div class="search-box position-relative flex-grow-1" style="max-width: 400px;">
+                <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted" style="left: 15px;"></i>
+                <input type="text" id="customSearch" class="form-control rounded-pill ps-5 bg-light border-0" placeholder="Tìm kiếm khóa học, giảng viên...">
+            </div>
+            <div class="d-flex gap-2">
+                <select id="statusFilter" class="form-select rounded-pill bg-light border-0 text-muted fw-bold" style="min-width: 180px;">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="PENDING_REVIEW">Chờ duyệt</option>
+                    <option value="PUBLISHED">Đã duyệt</option>
+                    <option value="INACTIVE">Đã dừng</option>
+                    <option value="REJECTED">Từ chối</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card table-card-edup">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+        <table id="courseAdminTable" class="table modern-table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Khóa học</th>
+                    <th>Giá</th>
+                    <th>Lời nói đầu</th>
+                    <th class="col-status">Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    <th>Ngày publish</th>
+                    <th style="width: 140px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="c : ${courses}">
+                    <td th:text="${c.id}">1</td>
+                    <td>
+                        <div class="info-cell">
+                            <img th:src="${c.imageUrl != null and !c.imageUrl.isEmpty() ? c.imageUrl : '/images/default-course.png'}" class="course-thumb" alt="Khóa học" onerror="this.onerror=null; this.src='/images/default-course.png';">
+                            <div class="info-details">
+                                <h6 th:text="${c.title != null ? c.title : 'N/A'}">Tiêu đề khóa học</h6>
+                                <span th:text="${c.teacher != null and c.teacher.fullName != null ? c.teacher.fullName : 'N/A'}">Tên giảng viên</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td th:text="${c.price != null ? (#numbers.formatDecimal(c.price, 0, 'COMMA', 0, 'POINT') + ' ₫') : 'N/A'}">0 ₫</td>
+                    <td>
+                        <small th:if="${c.preface != null and !c.preface.isEmpty()}" th:text="${#strings.abbreviate(c.preface, 80)}" class="text-muted">Lời nói đầu...</small>
+                        <small th:if="${c.preface == null or c.preface.isEmpty()}" class="text-muted">—</small>
+                    </td>
+                    <td class="col-status" th:data-search="${c.status != null ? c.status.name() : ''}">
+                        <span th:if="${c.status != null and c.status.name() == 'PENDING_REVIEW'}" class="badge rounded-pill bg-warning text-dark">Chờ duyệt</span>
+                        <span th:if="${c.status != null and c.status.name() == 'PUBLISHED'}" class="badge rounded-pill bg-success">Đã duyệt</span>
+                        <span th:if="${c.status != null and c.status.name() == 'INACTIVE'}" class="badge rounded-pill bg-secondary">Đã dừng</span>
+                        <span th:if="${c.status != null and c.status.name() == 'REJECTED'}" class="badge rounded-pill bg-danger">Từ chối</span>
+                        <span th:if="${c.status == null or (c.status.name() != 'PENDING_REVIEW' and c.status.name() != 'PUBLISHED' and c.status.name() != 'INACTIVE' and c.status.name() != 'REJECTED')}" class="badge rounded-pill bg-secondary">—</span>
+                    </td>
+                    <td th:text="${c.createdAt != null ? #temporals.format(c.createdAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
+                    <td th:text="${c.publishedAt != null ? #temporals.format(c.publishedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/admin/courses/detail/{id}(id=${c.id})}" class="btn btn-sm btn-info text-white rounded-pill position-relative" style="z-index: 10;" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                            <th:block th:if="${c.status != null and c.status.name() == 'PENDING_REVIEW'}">
+                                <form th:action="@{/admin/courses/{id}/approve(id=${c.id})}" method="post" class="m-0 position-relative d-inline" style="z-index: 10;">
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill" title="Duyệt"><i class="fas fa-check"></i></button>
+                                </form>
+                                <form th:action="@{/admin/courses/{id}/reject(id=${c.id})}" method="post" class="m-0 position-relative d-inline" style="z-index: 10;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" title="Từ chối" onclick="return confirm('Từ chối khóa học này?');"><i class="fas fa-times"></i></button>
+                                </form>
+                            </th:block>
+                            <form th:if="${c.status != null and (c.status.name() == 'PUBLISHED' or c.status.name() == 'INACTIVE')}" th:action="@{/admin/courses/toggle-status/{id}(id=${c.id})}" method="post" class="m-0 position-relative" style="z-index: 10;">
+                                <button type="submit" class="btn btn-sm rounded-pill"
+                                        th:classappend="${c.status.name() == 'INACTIVE' ? 'btn-success' : 'btn-warning text-dark'}"
+                                        th:title="${c.status.name() == 'INACTIVE' ? 'Tiếp tục hoạt động' : 'Dừng hoạt động'}"
+                                        onclick="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái hoạt động của khóa học này?');">
+                                    <i class="fas" th:classappend="${c.status.name() == 'INACTIVE' ? 'fa-play' : 'fa-pause'}"></i>
+                                </button>
+                            </form>
+                            <form th:if="${c.status != null and c.status.name() == 'REJECTED'}" th:action="@{/admin/courses/delete/{id}(id=${c.id})}" method="post" class="m-0 position-relative d-inline-block" style="z-index: 10;" onsubmit="return confirm('CẢNH BÁO: Xóa vĩnh viễn khóa học này? Dữ liệu không thể khôi phục!');">
+                                <button type="submit" class="btn btn-sm btn-danger rounded-pill" title="Xóa khóa học">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script>
+        $(document).ready(function() {
+            var table = $('#courseAdminTable').DataTable({
+                "dom": "lrtip",
+                "language": { "emptyTable": "Không có dữ liệu" }
+            });
+            var statusFilterVal = '';
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                if (settings.nTable.id !== 'courseAdminTable') return true;
+                if (!statusFilterVal) return true;
+                var row = table.row(dataIndex).node();
+                return $(row).find('td.col-status').attr('data-search') === statusFilterVal;
+            });
+            $('#customSearch').on('keyup', function() { table.search(this.value).draw(); });
+            $('#statusFilter').on('change', function() {
+                statusFilterVal = $(this).val();
+                table.draw();
+            });
+        });
+        </script>
+    </div>
+</body>
+</html>

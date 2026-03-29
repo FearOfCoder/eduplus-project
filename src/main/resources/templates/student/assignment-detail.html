@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chi tiết bài tập</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .assignment-textarea {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background-color: #f8fafc;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+        .assignment-textarea:focus {
+            border-color: var(--brand-primary);
+            background-color: #fff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .assignment-sticky-col {
+            position: sticky;
+            top: 100px;
+        }
+        .result-card-highlight {
+            border: 2px solid var(--brand-primary);
+            background-color: rgba(79, 70, 229, 0.03);
+        }
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent-teal);
+        }
+        .btn-back-lesson:hover {
+            font-weight: 800;
+            color: var(--brand-primary) !important;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container py-4">
+    <!-- Thông báo thành công/lỗi -->
+    <div th:if="${message != null}"
+         th:classappend="${messageType == 'success' ? 'alert-success' : (messageType == 'error' ? 'alert-danger' : 'alert-info')}"
+         class="alert alert-dismissible fade show" role="alert">
+        <i th:classappend="${messageType == 'success' ? 'fas fa-check-circle' : (messageType == 'error' ? 'fas fa-exclamation-circle' : 'fas fa-info-circle')}"></i>
+        <span th:text="${message}">Thông báo</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Header: Card thông tin bài tập -->
+    <div class="card bg-white shadow-sm rounded-4 p-4 mb-4 border-0">
+        <div class="mb-3">
+            <a th:href="@{/student/course/{id}(id=${assignment.course.id})}" class="btn btn-light text-muted fw-bold shadow-sm rounded-pill px-3 py-2 transition-all btn-back-lesson text-decoration-none">
+                <i class="fas fa-arrow-left me-1"></i> Quay lại bài giảng
+            </a>
+        </div>
+        <h3 class="fw-bold mb-2" th:text="${assignment.title}">Tiêu đề bài tập</h3>
+        <p class="text-muted mb-3" th:text="${assignment.course != null ? assignment.course.title : 'Khóa học'}">Tên khóa học</p>
+        <div class="d-flex flex-wrap gap-2">
+            <!-- Badge Hạn nộp -->
+            <span class="badge rounded-pill px-3 py-2" style="background-color: #e0f2fe; color: #0369a1;">
+                <i class="fas fa-clock me-1"></i>
+                Hạn nộp: <span th:text="${assignment.dueDate != null ? #temporals.format(assignment.dueDate, 'dd/MM/yyyy HH:mm') : 'Không giới hạn'}">Không giới hạn</span>
+            </span>
+            <!-- Badge Trạng thái: Chưa nộp / Đã nộp / Đã chấm -->
+            <span th:if="${submission == null}"
+                  class="badge rounded-pill px-3 py-2 bg-secondary">Chưa nộp</span>
+            <span th:if="${submission != null && submission.grade == null}"
+                  class="badge rounded-pill px-3 py-2" style="background-color: var(--accent-teal); color: #fff;">Đã nộp</span>
+            <span th:if="${submission != null && submission.grade != null}"
+                  class="badge rounded-pill px-3 py-2 bg-gradient-brand">Đã chấm</span>
+        </div>
+    </div>
+
+    <!-- Layout Workspace 7-5 -->
+    <div class="row g-4">
+        <!-- CỘT TRÁI: Đề bài & Kết quả chấm -->
+        <div class="col-xl-7 col-lg-7">
+            <!-- Card Đề bài -->
+            <div class="card bg-white rounded-4 shadow-sm p-4 mb-4 border-0">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-file-alt me-2 text-muted"></i> Chi tiết yêu cầu
+                </h5>
+                <div style="font-size: 1.05rem; line-height: 1.6;" th:text="${assignment.description}">Mô tả bài tập...</div>
+            </div>
+
+            <!-- Card Kết quả chấm (nổi bật khi có điểm) -->
+            <div class="card rounded-4 shadow-sm p-4 border-0 mb-4"
+                 th:classappend="${(submission != null && (submission.grade != null || submission.aiGrade != null)) ? 'result-card-highlight' : 'bg-white'}">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-magic text-warning me-2"></i> Kết quả đánh giá
+                </h5>
+
+                <div id="grading-message" class="alert alert-dismissible fade show d-none" role="alert">
+                    <span id="grading-message-text"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Chưa có điểm -->
+                <div th:if="${submission == null || (submission.grade == null && submission.aiGrade == null)}">
+                    <p class="text-muted mb-0" th:if="${submission == null}">Chưa có điểm. Hãy nộp bài rồi bấm chấm bằng AI hoặc chờ giảng viên chấm.</p>
+                    <p class="text-muted mb-0" th:if="${submission != null && submission.aiGrade == null}">Chưa có điểm. Bạn có thể bấm nút bên dưới để chấm bằng AI hoặc chờ giảng viên chấm.</p>
+                    <div th:if="${submission != null}" class="mt-3">
+                        <button type="button" class="btn btn-grade-ai btn-outline-primary rounded-pill"
+                                th:attr="data-submission-id=${submission.id}">
+                            <i class="fas fa-magic me-2"></i> Chấm điểm ngay bằng AI
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Gợi ý AI (chưa có điểm chốt GV) -->
+                <div th:if="${submission != null && submission.grade == null && submission.aiGrade != null}">
+                    <p class="text-muted small mb-2">🤖 Gợi ý từ AI (chưa phải điểm chính thức)</p>
+                    <div class="mb-3">
+                        <span class="score-display" th:text="${#numbers.formatDecimal(submission.aiGrade, 1, 1)}">0</span>
+                        <span class="text-muted">/ 100</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Nhận xét AI:</strong>
+                        <div class="mt-2 p-3 rounded-3 bg-light" style="white-space: pre-wrap; font-size: 1rem;" th:text="${submission.aiFeedback}">—</div>
+                    </div>
+                    <p class="text-muted small mb-0">Giảng viên sẽ chốt điểm chính thức sau.</p>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-grade-ai btn-outline-primary btn-sm rounded-pill"
+                                th:attr="data-submission-id=${submission.id}">
+                            <i class="fas fa-magic me-1"></i> Chấm lại bằng AI
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Điểm chính thức (GV đã chấm) -->
+                <div th:if="${submission != null && submission.grade != null}">
+                    <div class="mb-3">
+                        <span class="score-display" th:text="${#numbers.formatDecimal(submission.grade, 1, 1)}">0</span>
+                        <span class="text-muted">/ 100</span>
+                        <span class="badge bg-success ms-2 rounded-pill">👨‍🏫 Giảng viên đã chấm</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Nhận xét:</strong>
+                        <div class="mt-2 p-3 rounded-3 bg-light" style="white-space: pre-wrap; font-size: 1rem;" th:text="${submission.teacherFeedback}">—</div>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Chấm lúc <span th:text="${submission.gradedAt != null ? #temporals.format(submission.gradedAt, 'dd/MM/yyyy HH:mm') : '—'}">—</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bài nộp đã gửi (hiển thị trong cột trái khi đã nộp) -->
+            <div th:if="${submission != null}" class="card bg-white rounded-4 shadow-sm p-4 border-0">
+                <h6 class="fw-bold mb-2">Bài nộp của bạn</h6>
+                <p class="text-muted small mb-2">
+                    Đã nộp lúc <span th:text="${#temporals.format(submission.submittedAt, 'dd/MM/yyyy HH:mm')}">—</span>
+                </p>
+                <pre class="mb-0 p-3 rounded-3 bg-light" style="white-space: pre-wrap; font-size: 0.95rem;" th:text="${submission.studentAnswer}">Nội dung bài làm...</pre>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: Khu vực nộp bài (sticky) -->
+        <div class="col-xl-5 col-lg-5">
+            <div class="assignment-sticky-col">
+                <div class="card bg-white rounded-4 shadow-sm p-4 border-0">
+                    <h6 class="fw-bold mb-2">Nộp / cập nhật bài làm</h6>
+                    <p class="text-muted small mb-3">Nhập nội dung bài làm hoặc dán link (Drive/Github) vào bên dưới.</p>
+
+                    <form th:action="@{|/student/assignments/${assignment.id}/submit|}" method="post">
+                        <textarea name="studentAnswer"
+                                  class="form-control assignment-textarea w-100"
+                                  rows="12"
+                                  placeholder="Bạn có thể dán link bài làm, mô tả chi tiết, hoặc code (demo)..."
+                                  th:text="${submission != null ? submission.studentAnswer : ''}"></textarea>
+                        <button type="submit" class="btn bg-gradient-brand text-white w-100 rounded-pill py-3 fw-bold shadow-sm mt-3">
+                            <i class="fas fa-paper-plane me-2"></i> Gửi bài nộp
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+<script th:inline="javascript">
+(function() {
+    const btns = document.querySelectorAll('.btn-grade-ai');
+    if (!btns.length) return;
+
+    const messageEl = document.getElementById('grading-message');
+    const messageTextEl = document.getElementById('grading-message-text');
+
+    function showMessage(text, isError) {
+        if (!messageEl || !messageTextEl) return;
+        messageTextEl.textContent = text;
+        messageEl.classList.remove('d-none', 'alert-success', 'alert-danger');
+        messageEl.classList.add(isError ? 'alert-danger' : 'alert-success');
+    }
+
+    function hideMessage() {
+        if (messageEl) messageEl.classList.add('d-none');
+    }
+
+    btns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const submissionId = btn.getAttribute('data-submission-id');
+            if (!submissionId) {
+                showMessage('Không tìm thấy ID bài nộp.', true);
+                return;
+            }
+
+            btn.disabled = true;
+            var origText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang chấm...';
+            hideMessage();
+
+            fetch('/api/grading/' + submissionId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(function(res) {
+                return res.text().then(function(text) {
+                    try {
+                        return { ok: res.ok, status: res.status, body: text, json: JSON.parse(text) };
+                    } catch (_) {
+                        return { ok: res.ok, status: res.status, body: text, json: null };
+                    }
+                });
+            })
+            .then(function(result) {
+                if (result.ok && result.json) {
+                    showMessage('Chấm xong! Điểm: ' + result.json.score + '/100. Trang sẽ tải lại sau 2 giây.', false);
+                    setTimeout(function() { location.reload(); }, 2000);
+                } else {
+                    showMessage(result.body || 'Lỗi không xác định (HTTP ' + result.status + ').', true);
+                    btn.disabled = false;
+                    btn.innerHTML = origText;
+                }
+            })
+            .catch(function(err) {
+                showMessage('Lỗi kết nối: ' + err.message, true);
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            });
+        });
+    });
+})();
+</script>
+<script th:src="@{/js/notifications.js}"></script>
+</body>
+</html>

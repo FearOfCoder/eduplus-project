@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EduPlus - Học kỹ năng mới, mở tương lai mới</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        /* Hero Split: trái text, phải ảnh + floating badges */
+        .hero-split {
+            min-height: 85vh;
+            display: flex;
+            align-items: center;
+            padding: 4rem 0;
+            background: var(--bg-light);
+        }
+        .hero-split .hero-title {
+            font-family: var(--font-heading);
+            font-size: clamp(2rem, 5vw, 3.25rem);
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--secondary-color);
+            margin-bottom: 1.25rem;
+        }
+        .hero-split .hero-title .highlight {
+            background: var(--gradient-brand);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-split .hero-sub {
+            font-size: 1.125rem;
+            color: var(--edup-text-muted);
+            margin-bottom: 2rem;
+            max-width: 480px;
+        }
+        .hero-split .hero-cta .btn {
+            padding: 0.75rem 1.75rem;
+            font-weight: 600;
+            border-radius: var(--edup-radius);
+        }
+        .hero-split .hero-cta .btn-primary {
+            background: var(--gradient-brand);
+            border: none;
+        }
+        .hero-split .hero-cta .btn-primary:hover {
+            filter: brightness(1.05);
+            box-shadow: 0 4px 20px rgba(236, 72, 153, 0.35);
+        }
+        .hero-split .hero-image-wrap {
+            position: relative;
+            max-width: 480px;
+            margin-left: auto;
+        }
+        .hero-split .hero-image-wrap .hero-img {
+            width: 100%;
+            height: 380px;
+            object-fit: cover;
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            box-shadow: 0 20px 50px rgba(14, 184, 166, 0.15);
+        }
+        .hero-split .floating-badge {
+            position: absolute;
+            background: #fff;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #eaeaea;
+            font-weight: 600;
+            color: var(--secondary-color);
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        .hero-split .floating-badge i {
+            margin-right: 0.5rem;
+        }
+        .hero-split .floating-badge.badge-1 i { color: var(--accent-teal); }
+        .hero-split .floating-badge.badge-2 i { color: var(--accent-coral); }
+        .hero-split .floating-badge.badge-1 {
+            top: 10%;
+            right: -10%;
+        }
+        .hero-split .floating-badge.badge-2 {
+            bottom: 20%;
+            left: -15%;
+        }
+        @media (max-width: 991px) {
+            .hero-split .hero-image-wrap { margin: 2rem auto 0; }
+            .hero-split .floating-badge.badge-1 { right: 5%; }
+            .hero-split .floating-badge.badge-2 { left: 5%; }
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <!-- Hero Section: Split layout -->
+    <section class="hero-split">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="hero-title">Học từ các <span class="highlight">Chuyên Gia</span> hàng đầu</h1>
+                    <p class="hero-sub">Nền tảng khóa học trực tuyến chất lượng cao. Nâng cấp kỹ năng, mở rộng cơ hội với hàng trăm khóa học từ giảng viên uy tín.</p>
+                    <div class="hero-cta d-flex flex-wrap gap-3">
+                        <a th:href="@{/courses}" class="btn btn-primary">Khám phá khóa học</a>
+                        <a th:href="@{/register}" class="btn btn-outline-primary">Tham gia cộng đồng</a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-image-wrap">
+                        <img class="hero-img" src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80" alt="Học tập cùng chuyên gia">
+                        <div class="floating-badge badge-1">
+                            <i class="fas fa-book-open"></i> 200+ Khóa học
+                        </div>
+                        <div class="floating-badge badge-2">
+                            <i class="fas fa-users"></i> 10.000+ Học viên
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="container pb-5 flex-grow-1">
+        <h2 class="fw-bold mb-4" style="font-size: 1.5rem;">Khóa học nổi bật</h2>
+        <div class="row g-4">
+            <div class="col-sm-6 col-lg-4 col-xl-3" th:each="course : ${courses}">
+                <a th:href="@{|/course/${course.id}/intro|}" class="text-decoration-none text-dark">
+                    <div class="card course-card-edup h-100">
+                        <div class="card-img-wrap" th:style="${course.imageUrl != null and !course.imageUrl.isEmpty()} ? 'background-image: url(' + ${course.imageUrl} + '); background-size: cover; background-position: center;' : ''">
+                            <i th:unless="${course.imageUrl != null and !course.imageUrl.isEmpty()}" class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title" th:text="${course.title}">Tên khóa học</h5>
+                            <div class="instructor d-flex align-items-center mt-1 mb-2">
+                                <img th:if="${course.teacher != null and course.teacher.avatar != null and !course.teacher.avatar.isEmpty()}" th:src="${course.teacher.avatar}" alt="Avatar"/>
+                                <span th:unless="${course.teacher != null and course.teacher.avatar != null and !course.teacher.avatar.isEmpty()}" class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center me-2" style="width:24px;height:24px;"><i class="fas fa-user text-white" style="font-size:0.65rem;"></i></span>
+                                <span th:text="${course.teacher != null ? course.teacher.fullName : 'EduPlus'}">Giảng viên</span>
+                            </div>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="price text-price" th:text="${#numbers.formatDecimal(course.price, 0, 'COMMA', 0, 'POINT') + ' ₫'}">0 ₫</span>
+                                <span class="rating"><i class="fas fa-star"></i> 4.5</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <p th:if="${#lists.isEmpty(courses)}" class="text-muted text-center py-5">Chưa có khóa học nào.</p>
+        <div class="text-center mt-4">
+            <a th:href="@{/courses}" class="btn btn-outline-primary btn-lg rounded-edup">Xem tất cả khóa học</a>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script th:src="@{/js/notifications.js}"></script>
+    <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const userRole = /*[[${currentUser != null and currentUser.role != null ? currentUser.role.name() : ''}]]*/ '';
+
+        if (urlParams.has('loginSuccess')) {
+            let title = "Xin chào!";
+            let msg = "Mừng bạn quay trở lại.";
+
+            if (userRole === 'ADMIN') {
+                title = "Xin chào Quản trị viên!";
+                msg = "Chúc bạn làm việc hiệu quả.";
+            } else if (userRole === 'TEACHER') {
+                title = "Xin chào Thầy/Cô!";
+                msg = "Chúc bạn có những bài giảng tuyệt vời.";
+            } else if (userRole === 'STUDENT') {
+                title = "Chào bạn!";
+                msg = "Chúc bạn học tập thật tốt nhé.";
+            }
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: title,
+                text: msg,
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+            window.history.replaceState(null, null, window.location.pathname);
+        }
+
+        if (urlParams.has('logout')) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Đăng xuất thành công',
+                showConfirmButton: false,
+                timer: 3000
+            });
+            window.history.replaceState(null, null, window.location.pathname);
+        }
+    });
+    </script>
+</body>
+</html>
